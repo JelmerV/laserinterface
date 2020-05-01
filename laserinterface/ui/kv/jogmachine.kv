@@ -1,0 +1,138 @@
+#:kivy 1.11.0
+
+<Jogger>:
+    orientation: "vertical"
+    spacing: 10
+    padding: 10
+
+    BoxLayout:
+        size_hint_y: 0.8
+        orientation: "horizontal"
+        spacing: 10
+        padding: 10
+
+        GridLayout:
+            size_hint_x: 0.8
+            id: move_buttons
+
+            rows: 3
+            cols: 3
+            padding: 50
+            spacing: 50
+
+            Button:
+                text: '\\'
+                height: 30
+                width: 30
+                on_release: root.jog('-X+Y')
+            Button:
+                text: '+Y'
+                height: 30
+                width: 30
+                on_release: root.jog('+Y')
+            Button:
+                text: '/'
+                height: 30
+                width: 30
+                on_release: root.jog('+X+Y')
+            Button:
+                text: '-X'
+                height: 30
+                width: 30
+                on_release: root.jog('-X')
+            # TODO: has to be replaced by joystick for jogging
+            Widget:
+                height: 30
+                width: 30
+            Button:
+                text: '+X'
+                height: 30
+                width: 30
+                on_release: root.jog('+X')
+            Button:
+                text: '/'
+                height: 30
+                width: 30
+                on_release: root.jog('-X-Y')
+            Button:
+                text: '-Y'
+                height: 30
+                width: 30
+                on_release: root.jog('-Y')
+            Button:
+                text: '\\'
+                height: 30
+                width: 30
+                on_release: root.jog('+X-Y')
+
+        BoxLayout:
+            size_hint_x: 0.1
+            orientation: 'vertical'
+            Label:
+                size_hint_y: 0.1
+                text: 'stepsize'
+            Label:
+                size_hint_y: 0.1
+                text: str(root.stepsize)
+            Slider:
+                size_hint_y: 0.8
+                orientation: 'vertical'
+                min: 0
+                max: len(root.stepsize_range)-1
+                step: 1
+                value: 5
+                on_value: root.set_stepsize(args[1])
+
+        BoxLayout:
+            size_hint_x: 0.1
+            orientation: 'vertical'
+            Label:
+                size_hint_y: 0.1
+                text: 'feedrate'
+            Label:
+                size_hint_y: 0.1
+                text: str(root.feedrate)
+            Slider:
+                size_hint_y: 0.8
+                orientation: 'vertical'
+                min: 0
+                max: len(root.feedrate_range)-1
+                step: 1
+                value: 5
+                on_value: root.set_feedrate(args[1])
+
+    BoxLayout:
+        size_hint_y: 0.2
+        orientation: 'horizontal'
+        spacing: 10
+
+        Button:
+            text: 'go to 0 (G28)'
+            on_release: root.go_to_zero()
+
+        Button:
+            text: 'set to 0 (G92)'
+            on_release: root.set_zero()
+
+        Button:
+            text: 'rehome ($H)'
+            on_release: root.rehome()
+
+        Button:
+            text: 'unlock ($X)'
+            on_release: root.unlock_alarm()
+
+        Button:
+            text: 'soft reset (^X)'
+            on_release: root.reset_grbl()
+
+        Button:
+            text: 'pulse laser'
+            on_release: root.pulse_laser()
+
+
+<Joystick>:
+    canvas:
+        Ellipse:
+            pos: self.pos
+            size: self.size

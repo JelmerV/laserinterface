@@ -1,0 +1,2 @@
+Navigation icons (nav_**.png) were taken from boxicons without modifications. Sources can be
+found at <https://boxicons.com/> and <https://github.com/atisawd/boxicons>.

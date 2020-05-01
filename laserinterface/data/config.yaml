@@ -1,0 +1,67 @@
+GENERAL:
+  # duration of a test pulse in seconds (wait is done by a G4 command)
+  LASER_PULSE_DURATION: 0.2
+
+  # option to trim decimals before sending gcode to reduce the chars in grbl buffer
+  TRIM_DECIMALS_TO: 2
+
+  # useful for running/testing on desktop instead of
+  FULLSCREEN: False
+  MIMMIC_GPIO_LIB: True
+  MIMMIC_GPIO_CHANGE: False
+
+GRBL:
+  # The port of the arduino running grbl. connects at startup
+  # for logging use a spy url: "spy://COM3?file=path/to/file/grbl_serial.log"
+  PORT: "spy://COM3?file=D:/code/github/laserinterface/grbl_serial.log"
+
+  # poll freq influences error response time and framerate of the workspace simulator.
+  # The recommended max by grbl developpers is 5-10Hz.
+  POLL_STATE_FREQ: 5
+
+  # The following configurations are only configurable before uploading grbl code to the
+  # arduino. You probably dont need to change those.
+  BAUDRATE: 115200
+  RX_BUFFER_SIZE: 127
+
+# Pin numbers of the Digital Inputs and Outputs of the raspberry pi.
+GPIO:
+  # specify numbering mode: BOARD or BCM
+  PINTYPE: BOARD
+  POLL_FREQ: 40
+
+  # Thermometer using a 1-wire interface is connected at pin 7 (board nr).
+  # red range also triggers the warning callbacks
+  TEMP_RANGE:
+    GREEN: 18
+    ORANGE: 21
+    RED: 23
+
+  OUTPUTS:
+    # empty relay on 38 is broken
+    LASER: 37
+    MOTOR: 36
+    GRBL: 35
+    COOLING: 33
+    AIR: 31
+    EXHAUST: 32
+    LIGHT: 40
+
+  # A low signal will be interpreted by the program as unsafe and trigger the warning callbacks
+  INPUTS:
+    COOLING:
+      PIN: 11
+      TEXT_LOW: NOT Flowing
+      TEXT_HIGH: Flowing
+    ESTOP:
+      PIN: 12
+      TEXT_LOW: Pressed
+      TEXT_HIGH: Released
+    FRONT_COVER:
+      PIN: 13
+      TEXT_LOW: Open
+      TEXT_HIGH: Closed
+    TOP_COVER:
+      PIN: 15
+      TEXT_LOW: Open
+      TEXT_HIGH: Closed

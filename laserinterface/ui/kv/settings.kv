@@ -1,0 +1,30 @@
+#:kivy 1.11.0
+
+<ConnectGrbl>:
+    size_hint: (0.6, 0.8)
+    title: 'Select a port'
+    ports_dropdown: ports_dropdown.__self__
+
+    RelativeLayout:
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                height: self.texture_size[1]
+                padding: 10, 10
+                text: 'Serial connection with GRBL failed. Please select a valid port from the list below'
+
+            Button:
+                id: port_btn
+                text: '<select a port>'
+                on_release: ports_dropdown.open(self)
+                on_parent: ports_dropdown.dismiss(self)
+
+            Label:
+                text: root.connect_state
+
+            Button:
+                text: 'Continue'
+                on_release: root.dismiss()
+
+        DropDown:
+            id: ports_dropdown

@@ -1,0 +1,91 @@
+#:kivy 1.11.0
+
+<JobController>:
+    orientation: "vertical"
+    spacing: 10
+    padding: 10
+
+    job_duration: 0
+
+    BoxLayout:
+        spacing: 10
+        padding: 10
+        size_hint_y: 0.5
+        orientation: 'vertical'
+        Label:
+            text: 'Override laser power:'+str(root.power_override)
+        Slider:
+            min: 10
+            max: 200
+            value: root.power_override
+            disabled: True
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: '-10'
+                on_release: root.override_power('-10')
+            Button:
+                text: '-1'
+                on_release: root.override_power('-1')
+            Button:
+                text: 'reset'
+                on_release: root.override_power('reset')
+            Button:
+                text: '+1'
+                on_release: root.override_power('+1')
+            Button:
+                text: '+10'
+                on_release: root.override_power('+10')
+
+        Label:
+            text: 'Override feedrate:'+str(root.feed_override)
+        Slider:
+            min: 10
+            max: 200
+            value: root.feed_override
+            disabled: True
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: '-10'
+                on_release: root.override_feed('-10')
+            Button:
+                text: '-1'
+                on_release: root.override_feed('-1')
+            Button:
+                text: 'reset'
+                on_release: root.override_feed('reset')
+            Button:
+                text: '+1'
+                on_release: root.override_feed('+1')
+            Button:
+                text: '+10'
+                on_release: root.override_feed('+10')
+
+
+    BoxLayout:
+        spacing: 10
+        padding: 10
+        size_hint_y: 0.3
+        orientation: 'vertical'
+        Label:
+            text: 'Selected job:' + root.selected_file
+        Label:
+            text: 'Job Duration:  {:.0f}min, {:.0f}sec.'.format(root.job_duration/60, (root.job_duration)%60)
+
+        ProgressBar:
+            value: root.job_progress
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                text: 'start job'
+                disabled: (root.job_active)
+                on_release: root.start_job()
+            Widget:
+                # spacer
+            Button:
+                text: 'pause'
+                disabled: (not root.job_active)
+            Button:
+                text: 'stop'
+                disabled: (not root.job_active)

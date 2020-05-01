@@ -1,0 +1,226 @@
+#:kivy 1.11.0
+
+#:import Factory kivy.factory.Factory
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+
+#:include laserinterface/ui/kv/fileselector.kv
+#:include laserinterface/ui/kv/gpiodisplay.kv
+#:include laserinterface/ui/kv/jobcontroller.kv
+#:include laserinterface/ui/kv/jogmachine.kv
+#:include laserinterface/ui/kv/machineview.kv
+#:include laserinterface/ui/kv/settings.kv
+#:include laserinterface/ui/kv/terminaldisplay.kv
+#:include laserinterface/ui/kv/themedwidgets.kv
+
+
+<MainLayout>:
+    #Floatlayout as root
+    hamburger: hamburger.__self__
+
+    Hamburger:
+        id: hamburger
+        right: root.right
+        top: root.top - top_bar.height
+        auto_width: False
+        width: dp(170)
+
+    BoxLayout:
+        orientation: 'vertical'
+        id: top_bar
+
+        BoxLayout:
+            size_hint_y: 0.1
+            orientation: 'horizontal'
+            Button:
+                size_hint_x: None
+                width: dp(75)
+                on_release: sm.current = 'home'
+                Image:
+                    source: 'icons/nav_home.png'
+                    size: self.parent.size
+                    pos: self.parent.pos
+            Button:
+                size_hint_x: None
+                width: dp(75)
+                on_release: sm.current = 'move'
+                Image:
+                    source: 'icons/nav_move.png'
+                    size: self.parent.size
+                    pos: self.parent.pos
+            Button:
+                size_hint_x: None
+                width: dp(75)
+                on_release: sm.current = 'job'
+                Image:
+                    source: 'icons/nav_job.png'
+                    size: self.parent.size
+                    pos: self.parent.pos
+            Button:
+                size_hint_x: None
+                width: dp(75)
+                on_release: sm.current = 'gpio'
+                Image:
+                    source: 'icons/nav_gpio.png'
+                    size: self.parent.size
+                    pos: self.parent.pos
+            Widget:
+                size_hint_x: 0.2
+            BoxLayout:
+                size_hint_x: 0.2
+                orientation: 'vertical'
+                Label:
+                    size_hint_y: 0.7
+                    text: 'Grbl rx buffer:\n'+str(root.grbl_buffer)+' of 127'
+                ProgressBar:
+                    size_hint_y: 0.3
+                    max: 127
+                    value: root.grbl_buffer
+            Widget:
+                size_hint_x: 0.2
+            GpioInputIcons:
+                id: gpio_display
+                size_hint_x: 0.5
+            Widget:
+                size_hint_x: 0.2
+            Button:
+                size_hint_x: None
+                width: dp(75)
+                on_release: hamburger.open(self)
+                on_parent: hamburger.dismiss(self)
+                Image:
+                    source: 'icons/nav_menu.png'
+                    size: self.parent.size
+                    pos: self.parent.pos
+
+        ScreenManager:
+            id: sm
+            transition: NoTransition()
+            size_hint_y: 0.9
+
+            HomeScreen:
+                id: home
+                name: 'home'
+
+            MoveScreen:
+                id: move
+                name: 'move'
+
+            JobScreen:
+                id: job
+                name: 'job'
+
+            GpioScreen:
+                id: gpio
+                name: 'gpio'
+
+
+<HomeScreen@Screen>:
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: 10
+        padding: 10
+
+        BoxLayout:
+            size_hint_x: 0.5
+            orientation: 'vertical'
+            spacing: 10
+            ShadedBoxLayout:
+                size_hint_y: 0.5
+                MachineView:
+                    id: machine_view
+
+            TerminalDisplay:
+                size_hint_y: 0.5
+                id: terminal_display
+
+        JobController:
+            size_hint_x: 0.4
+            id: job_control
+
+
+<MoveScreen@Screen>:
+    on_enter: machine_view.draw_workspace()
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: 10
+        padding: 10
+
+        BoxLayout:
+            size_hint_x: 0.4
+            orientation: 'vertical'
+            spacing: 10
+
+            ShadedBoxLayout:
+                size_hint_y: 0.4
+                MachineView:
+                    id: machine_view
+
+            TerminalDisplay:
+                size_hint_y: 0.6
+                id: terminal_display
+
+        Jogger:
+            size_hint_x: 0.6
+            id: jog_controller
+
+
+<JobScreen@Screen>:
+    FileSelector:
+        id: file_selector
+
+<GpioScreen@Screen>:
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: 10
+        padding: 10
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: 10
+            padding: 10
+            GpioInputLabels:
+                id: inputs
+                size_hint_y: 0.6
+
+            Label:
+                text: "option to define automation rules? to be added"
+                size_hint_y: 0.4
+
+        GpioOutputController:
+            id: outputs
+
+
+<Hamburger@DropDown>:
+    # on_parent: self.dismiss()
+    Button:
+        text: 'Connect GRBL'
+        size_hint_y: None
+        height: 44
+        on_release: app.root.open_grblconnect()
+    Button:
+        text: 'Settings'
+        size_hint_y: None
+        height: 44
+    Button:
+        text: 'Exit'
+        size_hint_y: None
+        height: 44
+        on_release: Factory.ExitPopup().open()
+
+
+<ExitPopup@Popup>:
+    size_hint: (0.6, 0.4)
+    title: 'Quit the Lasercutter Interface'
+    BoxLayout:
+        orientation: 'vertical'
+        Button:
+            text: 'Restart the interface'
+            on_release: app.restart_program()
+
+        Button:
+            text: 'Reboot the controller'
+            on_release: app.reboot_controller()
+
+        Button:
+            text: 'Poweroff the controller'
+            on_release: app.poweroff_controller

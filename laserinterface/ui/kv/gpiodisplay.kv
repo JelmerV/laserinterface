@@ -1,0 +1,152 @@
+#:kivy 1.11.0
+
+#:set green  [0.2, 0.5, 0.2, 1]
+#:set orange [0.545, 0.396, 0.215, 1]
+#:set red    [0.5, 0.2, 0.2, 1]
+
+<GpioInputIcons>:
+    orientation: 'horizontal'
+
+    # showing Temp, waterflow, doors, estop
+    Image:
+        id: temp_image
+        canvas.before:
+            Color:
+                rgba: red if (root.temp_state >= root.config['TEMP_RANGE']['RED']) else orange if (root.temp_state >= root.config['TEMP_RANGE']['ORANGE']) else green
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        source: 'icons/io_temp_0.png' if (root.temp_state >= root.config['TEMP_RANGE']['RED']) else 'icons/io_temp_1.png'
+        size: self.parent.size
+        pos: self.parent.pos
+
+    Image:
+        id: cooling_image
+        canvas.before:
+            Color:
+                rgba: green if root.cooling_state else red
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        source: 'icons/io_cooling_1.png' if root.cooling_state else 'icons/io_cooling_0.png'
+        size: self.parent.size
+        pos: self.parent.pos
+
+    Image:
+        id: cover_image
+        canvas.before:
+            Color:
+                rgba: green if (root.front_cover_state and root.top_cover_state) else red
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        source: 'icons/io_cover_11.png' if (root.front_cover_state and root.top_cover_state) else 'icons/io_cover_10.png' if (root.front_cover_state and not root.top_cover_state) else 'icons/io_cover_01.png' if (not root.front_cover_state and root.top_cover_state) else 'icons/io_cover_10.png'
+        size: self.parent.size
+        pos: self.parent.pos
+
+    Image:
+        id: estop_image
+        canvas.before:
+            Color:
+                rgba: green if root.estop_state else red
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        source: 'icons/io_estop_{}.png'.format(str(int(root.estop_state)))
+        size: self.parent.size
+        pos: self.parent.pos
+
+
+
+<GpioInputLabels>:
+    orientation: 'vertical'
+
+    Label:
+        text: 'Current state of the connected inputs:'
+
+    InputLabel:
+        color: red if (root.temp_state >= root.config['TEMP_RANGE']['RED']) else orange if (root.temp_state >= root.config['TEMP_RANGE']['ORANGE']) else green
+        name: 'Temperature of the cooling water:'
+        state: u'{:.2f} \N{DEGREE SIGN}C'.format(root.temp_state)
+
+    InputLabel:
+        color: green if root.cooling_state else red
+        name: 'Cooling water for lasertube:'
+        state: root.config['INPUTS']['COOLING']['TEXT_HIGH'] if root.cooling_state else root.config['INPUTS']['COOLING']['TEXT_LOW']
+
+    InputLabel:
+        color: green if root.top_cover_state else red
+        name: 'Door/cover on the top:'
+        state: root.config['INPUTS']['TOP_COVER']['TEXT_HIGH'] if root.top_cover_state else  root.config['INPUTS']['TOP_COVER']['TEXT_LOW']
+
+    InputLabel:
+        color: green if root.front_cover_state else red
+        name: 'Door/cover in the front:'
+        state: root.config['INPUTS']['FRONT_COVER']['TEXT_HIGH'] if root.front_cover_state else  root.config['INPUTS']['FRONT_COVER']['TEXT_LOW']
+
+    InputLabel:
+        color: green if root.estop_state else red
+        name: 'Emergency stop button:'
+        state: root.config['INPUTS']['ESTOP']['TEXT_HIGH'] if root.estop_state else root.config['INPUTS']['ESTOP']['TEXT_LOW']
+
+<InputLabel@BoxLayout>:
+    orientation: 'horizontal'
+
+    color: [0.5, 0.2, 0.2, 1]
+    name: 'give a name'
+    state: 'give a state'
+
+    canvas.before:
+        Color:
+            rgba: root.color
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        text: root.name
+    Label:
+        text: root.state
+
+
+
+<GpioOutputController>:
+    orientation: 'vertical'
+
+    Label:
+        text: 'Control the connected relays:'
+
+    Button:
+        id: LASER
+        text: 'Enable laser power: '
+        on_release: root.gpio_con.pin_write('LASER', '!')
+
+    Button:
+        id: MOTOR
+        text: 'Enable stepper moters: '
+        on_release: root.gpio_con.pin_write('MOTOR', '!')
+
+    Button:
+        id: GRBL
+        text: 'Halt GRBL'
+        on_release: root.gpio_con.pin_write('GRBL', '!')
+
+    Button:
+        id: COOLING
+        text: 'Enable pump for water cooling'
+        on_release: root.gpio_con.pin_write('COOLING', '!')
+
+    Button:
+        id: AIR
+        text: 'Enable air assist'
+        on_release: root.gpio_con.pin_write('AIR', '!')
+
+    Button:
+        id: EXHAUST
+        text: 'Enable exhaust fan'
+        on_release: root.gpio_con.pin_write('EXHAUST', '!')
+
+    Button:
+        id: LIGHT
+        text: 'Enable internal lighting'
+        on_release: root.gpio_con.pin_write('LIGHT', '!')
+

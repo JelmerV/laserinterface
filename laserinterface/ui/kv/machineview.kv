@@ -1,0 +1,97 @@
+#:kivy 1.11.0
+# <Widget>:
+#     canvas.after:
+#         Line:
+#             rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+#             dash_offset: 5
+#             dash_length: 3
+<MachineView>:
+    state: ''
+    mpos: ''
+    wpos: ''
+
+    Widget:
+        id: zero_mark
+        size_hint: None, None
+        size: 30, 30
+        canvas:
+            Color:
+                rgb: (0.8, 0.415, 0.886)
+            Line:
+                width: 1.1
+                group: 'caption'
+                points: (self.center_x-self.width/3, self.center_y, self.center_x+self.width/3, self.center_y)
+            Line:
+                width: 1.1
+                group: 'caption'
+                points: (self.center_x, self.center_y-self.height/2.1, self.center_x, self.center_y+self.height/2.1,)
+
+    Widget:
+        id: mach_mark
+        size_hint: None, None
+        size: 20, 20
+        canvas:
+            Color:
+                rgb: (0.9, 0.1, 0.1)
+            Line:
+                width: 1.1
+                group: 'caption'
+                points: (self.center_x-self.width/3, self.center_y, self.center_x+self.width/3, self.center_y)
+            Line:
+                width: 1.1
+                group: 'caption'
+                points: (self.center_x, self.center_y-self.height/2.1, self.center_x, self.center_y+self.height/2.1,)
+
+    BoxLayout:
+        orientation: 'vertical'
+        pos_hint: {'right': 0.98, 'top': 0.98}
+        size_hint: None, None
+        size: 120, 120
+        id: caption
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'mach state:'
+            Label:
+                text: root.state
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'Zero pos:'
+            Label:
+                canvas.after:
+                    Color:
+                        rgb: (0.8, 0.415, 0.886)
+                    Line:
+                        width: 1.1
+                        group: 'caption'
+                        points: (self.center_x-10, self.center_y, self.center_x+10, self.center_y)
+                    Line:
+                        width: 1.1
+                        group: 'caption'
+                        points: (self.center_x, self.center_y-10, self.center_x, self.center_y+10)
+
+        Label:
+            text: root.wpos
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'Mach. pos:'
+            Label:
+                canvas.after:
+                    Color:
+                        rgb: (0.9, 0.1, 0.1)
+                    Line:
+                        width: 1.1
+                        group: 'caption'
+                        points: (self.center_x-10, self.center_y, self.center_x+10, self.center_y)
+                    Line:
+                        width: 1.1
+                        group: 'caption'
+                        points: (self.center_x, self.center_y-10, self.center_x, self.center_y+10)
+
+        Label:
+            text: root.mpos

@@ -1,0 +1,89 @@
+#:kivy 1.11.0
+
+<TerminalDisplay>:
+    orientation: 'vertical'
+    padding: 10
+    spacing: 5
+
+    Label:
+        size_hint_y: None
+        height: dp(15)
+        text: 'Conversation with GRBL:'
+
+    RecycleView:
+        id: terminal_display
+        size_hint_y: 0.7
+        viewclass: 'TerminalLine'
+
+        RecycleBoxLayout:
+            size_hint: 1, None
+            height: self.minimum_height
+            orientation: 'vertical'
+
+            default_size: None, dp(30)
+            default_size_hint: 1, None
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(20)
+        orientation: 'horizontal'
+
+        Widget:
+            size_hint_x: 0.9
+
+        Label:
+            size_hint_x: None
+            width: self.texture_size[0]
+            text: 'verbose'
+
+        CheckBox:
+            size_hint_x: None
+            width: dp(30)
+            active: True
+            on_active: root.set_verbose(self.active)
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(30)
+        orientation: 'horizontal'
+
+        TextInput:
+            id: command_input
+            size_hint_x: 0.8
+            text: '(write a command to send)'
+
+        Button:
+            size_hint_x: 0.2
+            text: 'send'
+            on_release: root.send_command()
+
+<TerminalLine@BoxLayout>:
+    orientation: 'horizontal'
+    spacing: 1
+
+    line_nr: 99
+    state: '[ ? ]'
+    text: '...'
+
+    canvas:
+        Color:
+            rgb: (0.2, 0.2, 0.2)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    Label:
+        size_hint_x: 0.05
+        padding: (10, 0)
+        text: str(root.line_nr%1000)
+    Label:
+        size_hint_x: 0.2
+        padding: (10, 0)
+        text: root.state
+    Label:
+        size_hint_x: 0.8
+        padding: (10, 0)
+        text_size: self.width, None
+        height: self.texture_size[1]
+        text: root.text
+

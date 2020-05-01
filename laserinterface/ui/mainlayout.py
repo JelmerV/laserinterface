@@ -17,14 +17,13 @@ from laserinterface.datamanager.machine import MachineStateManager
 from laserinterface.datamanager.terminal import TerminalManager
 from laserinterface.helpers.gpiointerface import GpioInterface
 from laserinterface.helpers.grblinterface import GrblInterface
+from laserinterface.helpers.gcodereader import GcodeReader
 
 # Widget submodules. Most are only used at the kv side, but import is needed
-from laserinterface.ui.fileselector import FileSelector
-from laserinterface.ui.gcodeplotter import GcodeReader, PlottedGcode
+from laserinterface.ui.fileselector import FileSelector, PlottedGcode
 from laserinterface.ui.gpiodisplay import GpioInputIcons
 from laserinterface.ui.jobcontroller import JobController
 from laserinterface.ui.jogmachine import Jogger
-from laserinterface.ui.machinestate import MachineState
 from laserinterface.ui.machineview import MachineView
 from laserinterface.ui.settings import ConnectGrbl
 from laserinterface.ui.terminaldisplay import TerminalDisplay

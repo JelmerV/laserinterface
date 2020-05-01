@@ -1,1 +1,1 @@
-./.venv/Scripts/python -m laserinterface
+.\.venv\Scripts\python -m laserinterface

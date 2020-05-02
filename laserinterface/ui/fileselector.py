@@ -1,7 +1,8 @@
 
 # dependencies
-import logging
 from threading import Thread
+import logging
+import ruamel.yaml
 
 # Kivy imports
 from kivy.app import App
@@ -17,9 +18,15 @@ from laserinterface.helpers.gcodereader import GcodeReader, MOVE_TYPE
 
 _log = logging.getLogger().getChild(__name__)
 
+yaml = ruamel.yaml.YAML()
+config_file = 'laserinterface/data/config.yaml'
+with open(config_file, 'r') as ymlfile:
+    base_dir = yaml.load(ymlfile)['GENERAL']['GCODE_DIR']
+
 
 class FileSelector(BoxLayout):
     selected_file = StringProperty('')
+    base_dir = StringProperty(base_dir)
 
     valid_gcode_selected = False
 

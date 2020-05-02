@@ -35,7 +35,7 @@
         FileChooserListView:
             size_hint_y: 0.5
             id: filechooser
-            path: '/home/pi/gcode_files'
+            path: root.base_dir
             on_selection:
                 root.on_file_selected(self.selection[0])
 

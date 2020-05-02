@@ -2,7 +2,6 @@
 from threading import Thread
 import time
 import serial
-import re
 import struct
 import ruamel.yaml
 import queue
@@ -89,38 +88,32 @@ class GrblInterface:
         _log.info('Waiting for threads to finish')
         self.thread_poll_report.join()
         self.thread_receiver.join()
+        # self.thread_send_gcode.join() # hangs on queue.get()
 
         self.ser.close()
 
-    def serial_send(self, line_in, blocking=False):
-        ''' Send a string over the serial connection to grbl.
-        If the line is an alarm or report request, it is send directly. Strings
-        are send withhout the gcode comments and with a newline. Sending is
-        done with a blocking method. Run in a thread to prevent that'''
+    def get_config(self):
+        # TODO send '$$' and store return values
+        pass
+
+    def serial_send(self, line, blocking=False):
+        '''
+        Send a string over the serial connection to grbl. If the line is an
+        alarm or report request, it is send directly. Use blocking to wait
+        until the line is send.
+        '''
         if not self.connected:
             return False
 
-        if type(line_in) == int:
-            byte = struct.pack('>B', line_in)
+        # 'extended ascii' commands
+        if type(line) == int:
+            byte = struct.pack('>B', line)
             self.ser.write(byte)
             return True
-
-        comments = re.search(r'\((.+?)\)|;.+', line_in.strip())
-        if comments:
-            comment = comments.group(0)
-            self.terminal.store_comment(comment)
-            _log.info('comment in gcode found -> '+comment)
-
-        # Strip spaces and comments (**) and ;**
-        line = re.sub(r'\s|\(.*?\)|;(.*)', '', line_in)
-        line = line.upper().strip()
-
-        # if line has no gcode, dont send it
-        if line == '':
-            return True
+        # real-time commands do not wait in buffer, so they are send directly
         elif line in ('!', '?', '~'):
             self.ser.write(line.encode('ascii'))
-        # if line is gcode, send using the send function
+        # if line is gcode etc. add it to the send queue
         else:
             self.terminal.store_send(line)
             self.lines_to_sent.put(line)
@@ -128,13 +121,12 @@ class GrblInterface:
             if blocking:
                 while self.lines_count < line_nr:
                     time.sleep(0.001)
-            _log.debug('line send -> '+line)
         return True
 
     def _gcode_sender(self):
         while not self._quit:
             line = self.lines_to_sent.get()
-            _log.info(f'sending a command -> "{line}"')
+            # _log.info(f'sending a command -> "{line}"')
 
             # or self.ser.inWaiting()
             while (sum(self.chars_in_buffer.queue)+len(line) >=
@@ -144,7 +136,6 @@ class GrblInterface:
                 time.sleep(0.001)
 
             # Send g-code block to grbl
-            _log.info(f'starting to send line')
             self.ser.write((line + '\n').encode('ascii'))
 
             # Track number of characters in grbl serial read buffer
@@ -152,7 +143,6 @@ class GrblInterface:
             self.lines_count += 1
 
             self.terminal.send_to_buffer()
-            _log.info(f'line send succesful')
 
     def _request_state(self):
         ''' Periodicly send '?' to request a new state. '''

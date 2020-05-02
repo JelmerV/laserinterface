@@ -3,6 +3,8 @@
 from threading import Thread
 import logging
 import time
+import re
+import ruamel.yaml
 
 # kivy imports
 from kivy.app import App
@@ -17,6 +19,11 @@ from laserinterface.data.grbl_doc import COMMANDS
 from laserinterface.ui.themedwidgets import ShadedBoxLayout
 
 _log = logging.getLogger().getChild(__name__)
+
+yaml = ruamel.yaml.YAML()
+config_file = 'laserinterface/data/config.yaml'
+with open(config_file, 'r') as ymlfile:
+    trim_decimal = yaml.load(ymlfile, )['GENERAL']['TRIM_DECIMALS_TO']
 
 
 class JobController(ShadedBoxLayout):
@@ -50,26 +57,9 @@ class JobController(ShadedBoxLayout):
         self.job_active = True
 
     def send_full_file(self):
-        app = App.get_running_app()
-        start_time = time.time()
-
-        with open(self.selected_file, 'r') as file:
-            lines = file.readlines()
-
-        total_lines = len(lines)
-        count = 0
-        last_progress = 0
-        for line in lines:
-            self.grbl_com.serial_send(line, blocking=True)
-
+        def update_progress(dt):
             self.job_duration = int(time.time() - start_time)
-
-            progress = int(count*100.0/total_lines)
-            if progress > last_progress:
-                Clock.schedule_once(
-                    lambda dt: self.setter('job_progress')(self, progress), 0)
-            last_progress = progress
-            count += 1
+            self.job_progress = int(count*100.0/total_lines)
 
         def finish_job(dt):
             _log.info('Finished sending a file.')
@@ -77,6 +67,39 @@ class JobController(ShadedBoxLayout):
             app.root.job_active = False
             self.job_active = False
 
+        app = App.get_running_app()
+        start_time = time.time()
+        timer = Clock.schedule_interval(update_progress, 0.5)
+
+        with open(self.selected_file, 'r') as file:
+            lines = file.readlines()
+
+        total_lines = len(lines)
+        count = 0
+        for line in lines:
+            line = line.strip().upper()
+
+            # trim decimals:
+            if trim_decimal:
+                line = re.sub(r'(\w[+-]?\d+\.\d{'+str(trim_decimal)+r'})\d+',
+                              r'\1', line)
+
+            # store comments to terminal
+            comments = re.search(r'\((.*?)\)|;(.*)', line)
+            if comments:
+                self.terminal.store_comment(comments.group(0))
+
+            # Strip spaces and comments (**) and ;**
+            line = re.sub(r'\+|\s|\(.*?\)|;.*', '', line)
+
+            if line == '':
+                continue
+
+            # send line but wait if buffer is full
+            self.grbl_com.serial_send(line, blocking=True)
+            count += 1
+
+        timer.cancel()
         Clock.schedule_once(finish_job, 0)
 
     def override_power(self, command):

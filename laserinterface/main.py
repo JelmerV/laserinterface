@@ -39,6 +39,7 @@ class MainLayoutApp(App):
 
     def restart_program(self):
         # if systemctl is set up correctly the ar should restar automaticly
+        self.root.stop()
         self.stop()
 
     def reboot_controller(self):

@@ -92,6 +92,11 @@ class MainLayout(FloatLayout):
         self.ids.gpio.ids.outputs.set_datamanager(
             machine=self.state, gpio_con=self.gpio)
 
+    def stop(self):
+        _log.warning('closing connections and stopping threads')
+        self.grbl_com.disconnect()
+        self.gpio.close()
+
     def open_grblconnect(self):
         self.connectgrbl.open()
 
@@ -99,3 +104,5 @@ class MainLayout(FloatLayout):
         self.grbl_buffer = sum(self.grbl_com.chars_in_buffer.queue)
         if self.job_active and self.grbl_buffer < 10:
             print('*'*90, self.grbl_buffer)
+        if self.job_active and self.state.grbl_status['state'] == 'Idle':
+            print('FUCK:', self.terminal.line_out_buffer)

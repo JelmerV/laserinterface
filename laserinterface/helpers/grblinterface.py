@@ -17,7 +17,7 @@ with open(config_file, 'r') as ymlfile:
 
 
 class GrblInterface:
-    def __init__(self, terminal=None, machine_state=None, buffer_val=None):
+    def __init__(self, terminal=None, machine_state=None):
         # Store or Create terminal and state instance
         self.terminal = terminal
         self.state = machine_state
@@ -50,10 +50,8 @@ class GrblInterface:
             return self.connected
 
     def connect(self):
-        ''' Connect to the configured serial port.
-        connects and sends new lines to wake up grbl. Then it starts the thread
-        to handle any receided data, and starts an addition thread to
-        periodicly request the machine state. '''
+        ''' Connect to the configured serial port. also starts 3 threads for:
+        sending gcode, requesting state, and handling responses'''
 
         _log.info(f'connecting to {self.ser.port}')
         try:
@@ -151,47 +149,32 @@ class GrblInterface:
             time.sleep(1/config['POLL_STATE_FREQ'])
 
     def _receive_continuously(self):
-        ''' Continuously checks if there is data available in the serial buffer.
-        It data is available it calls the handling function. '''
-
+        # Continuously reads the serial buffer and does the required actions.
         while not self._quit:
-            while self.ser.inWaiting():
-                self._handle_response()
-            time.sleep(0.01)
+            out_temp = self.ser.readline().decode('ascii')
+            out_temp = out_temp.strip()
 
-    def _handle_response(self):
-        ''' Reads a line from the serial buffer and does the required actions.
-        status reports are send to the machine state class, 'ok' or 'error'
-        messages mean the buffer and teminal variables have to be updates.1`w
-        Other messages are added to the terminal history and can be displayed
-        in the GUI. '''
-
-        out_temp = self.ser.readline().decode('ascii')
-        out_temp = out_temp.strip()
-
-        if out_temp:
-            # if it is a report message (machine state):
-            if (out_temp[0] == '<' and out_temp[-1] == '>'):
-                self.state.handle_grbl_report(out_temp)
-
-            # if it is 'ok' or 'error' (finished a command from the buffer):
-            elif ('ok' in out_temp) or ('error' in out_temp):
-                if not self.chars_in_buffer.empty():
-                    # Delete the block corresponding to the last 'ok'
+            if out_temp:
+                # if 'ok' or 'error' (finished a command from the buffer):
+                if ('ok' in out_temp) or ('error' in out_temp):
                     self.chars_in_buffer.get()
 
-                if ('error' in out_temp):
-                    self.terminal.received_ok(error=True)
+                    if ('error' in out_temp):
+                        self.terminal.received_ok(error=True)
+                        self.terminal.store_received(out_temp, error=True)
+                    else:
+                        self.terminal.received_ok()
+
+                # if it is a report message (for machine state manager):
+                elif (out_temp[0] == '<' and out_temp[-1] == '>'):
+                    self.state.handle_grbl_report(out_temp)
+
+                elif (('ALARM' in out_temp) or ('Hold' in out_temp)
+                        or ('Door' in out_temp)):
+                    _log.debug(f'Message received "{out_temp}"')
                     self.terminal.store_received(out_temp, error=True)
+
+                # if it is a message without ok or error (like after $$)
                 else:
-                    self.terminal.received_ok()
-
-            elif (('ALARM' in out_temp) or ('Hold' in out_temp)
-                    or ('Door' in out_temp)):
-                _log.debug(f'Message received "{out_temp}"')
-                self.terminal.store_received(out_temp, error=True)
-
-            # if it is a message without ok or error (like after $$)
-            else:
-                _log.debug(f'Message received "{out_temp}"')
-                self.terminal.store_received(out_temp)
+                    _log.debug(f'Message received "{out_temp}"')
+                    self.terminal.store_received(out_temp)

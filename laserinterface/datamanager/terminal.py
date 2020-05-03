@@ -1,6 +1,3 @@
-
-from kivy.clock import Clock
-
 from laserinterface.data.grbl_doc import ERROR_CODES
 
 import logging
@@ -75,16 +72,14 @@ class TerminalManager():
 
     def callback(self):
         # All callbacks are called every time a line is modified
-        def run_callbacks(dt):
-            if self.callbacks:
-                for callback in self.callbacks:
-                    callback()
-        Clock.schedule_once(run_callbacks)
+        if self.callbacks:
+            for callback in self.callbacks:
+                callback()
 
     def store_comment(self, comment):
         line = [self.line_number, STATES['comment'], comment]
         self.line_number += 1
-        _log.debug(f'Added line to history -> ' + str(line))
+        _log.debug(f'stored a comment -> ' + str(line))
         self.line_history.append(line)
 
         self.callback()

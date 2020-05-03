@@ -7,7 +7,7 @@ GENERAL:
   TRIM_DECIMALS_TO: 3
 
   # directory where usb gets mounted and where gcode is stored
-  GCODE_DIR: \home\pi\gcode_files
+  GCODE_DIR: /home/pi/gcode_files
 
   # useful for running/testing on desktop instead of
   FULLSCREEN: False

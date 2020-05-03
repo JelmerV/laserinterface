@@ -4,6 +4,7 @@ from threading import Thread
 import logging
 
 # kivy imports
+from kivy.clock import mainthread
 from kivy.properties import BooleanProperty
 
 # submodules
@@ -26,6 +27,7 @@ class TerminalDisplay(ShadedBoxLayout):
         self.show_verbose = active
         self.update_terminal()
 
+    @mainthread
     def update_terminal(self):
         lines = self.terminal_man.get_all_lines(verbose=self.show_verbose)
         data = []

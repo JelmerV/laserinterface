@@ -1,6 +1,6 @@
 
 # kivy imports
-from kivy.clock import Clock
+from kivy.clock import mainthread
 from kivy.graphics import Line, Color
 from kivy.properties import StringProperty
 from kivy.uix.relativelayout import RelativeLayout
@@ -17,7 +17,8 @@ class MachineView(RelativeLayout):
         if self.machine_state:
             self.machine_state.add_state_callback(self.update_state)
 
-        Clock.schedule_once(lambda dt: self.draw_workspace(), 0)
+        # Clock.schedule_once(lambda dt:
+        self.draw_workspace()  # , 0)
 
     def draw_workspace(self, spacing=100):
         height = 800.0
@@ -37,6 +38,7 @@ class MachineView(RelativeLayout):
                      points=(0, self.height-i*spacing*scale,
                              width*scale, self.height-i*spacing*scale))
 
+    @mainthread
     def update_state(self, status):
         self.state = status['state']
         self.mpos = status['MPos']

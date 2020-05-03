@@ -5,6 +5,7 @@ import ruamel.yaml
 # kivy imports
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty
+from kivy.clock import mainthread
 
 # submodules
 from laserinterface.ui.themedwidgets import ShadedBoxLayout
@@ -39,6 +40,7 @@ class GpioInputIcons(BoxLayout):
             self.machine_state.add_gpio_callback(self.change_state)
             self.machine_state.add_temp_callback(self.change_temp)
 
+    @mainthread
     def change_state(self, item, state):
         if item == 'IN_FRONT_COVER':
             self.front_cover_state = state
@@ -49,6 +51,7 @@ class GpioInputIcons(BoxLayout):
         elif item == 'IN_ESTOP':
             self.estop_state = state
 
+    @mainthread
     def change_temp(self, temp):
         self.temp_state = temp
 
@@ -69,6 +72,7 @@ class GpioInputLabels(ShadedBoxLayout):
             self.machine_state.add_gpio_callback(self.change_state)
             self.machine_state.add_temp_callback(self.change_temp)
 
+    @mainthread
     def change_state(self, item, state):
         if item == 'IN_FRONT_COVER':
             self.front_cover_state = state
@@ -79,6 +83,7 @@ class GpioInputLabels(ShadedBoxLayout):
         elif item == 'IN_ESTOP':
             self.estop_state = state
 
+    @mainthread
     def change_temp(self, temp):
         self.temp_state = temp
 
@@ -91,9 +96,9 @@ class GpioOutputController(ShadedBoxLayout):
         self.gpio_con = gpio_con
 
         if self.machine_state:
-            self.machine_state.add_gpio_callback(
-                self.pin_changed)  # , check_output=True
+            self.machine_state.add_gpio_callback(self.pin_changed)
 
+    @mainthread
     def pin_changed(self, item, state):
         if item.startswith('OUT_'):
             button = self.ids.get(item[4:])

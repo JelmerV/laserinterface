@@ -69,6 +69,9 @@ class Jogger(ShadedBoxLayout):
         self.grbl_com.serial_send(gcode)
         return
 
+    def stop_jog(self):
+        self.grbl_com.serial_send(COMMANDS['cancel jog'])
+
     def go_to_zero(self):
         self.grbl_com.serial_send(f'G90G28X0Y0F{self.feedrate}')
 

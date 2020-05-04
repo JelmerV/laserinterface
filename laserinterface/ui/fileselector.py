@@ -1,6 +1,7 @@
 
 # dependencies
 from threading import Thread
+from os import path
 import logging
 import ruamel.yaml
 
@@ -22,6 +23,7 @@ yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
     base_dir = yaml.load(ymlfile)['GENERAL']['GCODE_DIR']
+    base_dir = base_dir if base_dir[-1] in ('/', '\\') else base_dir+'/'
 
 
 class FileSelector(BoxLayout):
@@ -35,17 +37,17 @@ class FileSelector(BoxLayout):
         #     self.ids.plotted_preview.continue_painting = False
         #     self.painter.join()
         #     self.ids.plotted_preview.continue_painting = True
-        print(filename)
 
         if not filename:
-            self.gcode_text = '(Please select a valid file)'
+            self.gcode_text = '<Please select a file>'
             return
-        self.selected_file = filename
+
+        self.selected_file = path.basename(filename)
         app = App.get_running_app()
         app.root.ids.home.ids.job_control.selected_file = filename
 
         try:
-            with open(self.selected_file) as gcode_file:
+            with open(base_dir+self.selected_file) as gcode_file:
                 gcode_text = [l.strip() for l in gcode_file.readlines(1000)]
             self.valid_gcode_selected = True
         except UnicodeDecodeError:
@@ -79,6 +81,8 @@ class PlottedGcode(RelativeLayout):
     max_y = NumericProperty(0.00)
     min_x = NumericProperty(0.00)
     min_y = NumericProperty(0.00)
+
+    grid_size = NumericProperty(0.00)
 
     job_duration = NumericProperty(0.00)
 
@@ -168,28 +172,28 @@ class PlottedGcode(RelativeLayout):
             self.ids.max_y_label.y = min(
                 size_y*scale_factor, self.height-self.ids.max_x_label.height)
 
-            for path in paths:
+            for _path in paths:
                 if not self.continue_painting:
                     self.continue_painting = True
                     return
 
-                w = 1.3 if path.laser_on else 0.5
+                w = 1.3 if _path.laser_on else 0.5
                 # set color and line style depending on the movement type
-                if path.move_type == MOVE_TYPE['RAPID']:
+                if _path.move_type == MOVE_TYPE['RAPID']:
                     Color(0.8, 0.415, 0.886)
                     line = Line(points=(), width=w, group='gcode')
-                elif path.move_type == MOVE_TYPE['LINEAR']:
+                elif _path.move_type == MOVE_TYPE['LINEAR']:
                     Color(0.415, 0.886, 0.717)
                     line = Line(points=(), width=w, group='gcode')
-                elif (path.move_type == MOVE_TYPE['ARC_CW'] or
-                        path.move_type == MOVE_TYPE['ARC_CCW']):
+                elif (_path.move_type == MOVE_TYPE['ARC_CW'] or
+                        _path.move_type == MOVE_TYPE['ARC_CCW']):
                     Color(0.415, 0.623, 0.886)
                     line = Line(points=(), width=w, group='gcode')
 
-                for i in range(len(path.points_x)):
+                for i in range(len(_path.points_x)):
                     scaled_point = (
-                        (path.points_x[i]-self.min_x)*scale_factor,
-                        (path.points_y[i]-self.min_y)*scale_factor,
+                        (_path.points_x[i]-self.min_x)*scale_factor,
+                        (_path.points_y[i]-self.min_y)*scale_factor,
                     )
                     line.points.extend(scaled_point)
 

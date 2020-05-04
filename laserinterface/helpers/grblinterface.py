@@ -20,7 +20,7 @@ class GrblInterface:
     def __init__(self, terminal=None, machine_state=None):
         # Store or Create terminal and state instance
         self.terminal = terminal
-        self.state = machine_state
+        self.machine = machine_state
 
         self.ser = serial.serial_for_url(
             url=config['PORT'],
@@ -37,6 +37,7 @@ class GrblInterface:
         self.lines_count = 0
         self.connected = False
         self.report = '<>'
+        self.requested_config = False
 
     def set_port(self, port):
         if self.connected:
@@ -61,13 +62,14 @@ class GrblInterface:
             self.connected = False
             return False
 
-        self.connected = True
-        time.sleep(0.5)
-        self.ser.write('\r\n\r\n'.encode('utf-8'))
-
         self.thread_receiver = Thread(
             target=self._receive_continuously, daemon=True)
         self.thread_receiver.start()
+
+        self.connected = True
+        time.sleep(0.5)
+        self.ser.write('\r\n\r\n'.encode('utf-8'))
+        time.sleep(0.5)
 
         self.thread_poll_report = Thread(
             target=self._request_state, daemon=True)
@@ -90,11 +92,15 @@ class GrblInterface:
 
         self.ser.close()
 
-    def get_config(self):
-        # TODO send '$$' and store return values
-        pass
+    def get_config(self, timeout=2):
+        self.requested_config = True
+        self.serial_send('$$')
+        start_time = time.time()
+        while self.requested_config and time.time()-start_time < timeout:
+            time.sleep(0.2)
+        print('received full config: ', self.machine.grbl_config)
 
-    def serial_send(self, line, blocking=False):
+    def serial_send(self, line, blocking=False, queue_count=0):
         '''
         Send a string over the serial connection to grbl. If the line is an
         alarm or report request, it is send directly. Use blocking to wait
@@ -117,7 +123,7 @@ class GrblInterface:
             self.lines_to_sent.put(line)
             line_nr = self.lines_count + len(self.lines_to_sent.queue)
             if blocking:
-                while self.lines_count < line_nr:
+                while self.lines_count < line_nr-queue_count:
                     time.sleep(0.001)
         return True
 
@@ -126,7 +132,6 @@ class GrblInterface:
             line = self.lines_to_sent.get()
             # _log.info(f'sending a command -> "{line}"')
 
-            # or self.ser.inWaiting()
             while (sum(self.chars_in_buffer.queue)+len(line) >=
                     (config['RX_BUFFER_SIZE']-2)):
                 # other thread is handling the incomming messages
@@ -167,7 +172,7 @@ class GrblInterface:
 
                 # if it is a report message (for machine state manager):
                 elif (out_temp[0] == '<' and out_temp[-1] == '>'):
-                    self.state.handle_grbl_report(out_temp)
+                    self.machine.handle_grbl_report(out_temp)
 
                 elif (('ALARM' in out_temp) or ('Hold' in out_temp)
                         or ('Door' in out_temp)):
@@ -176,5 +181,12 @@ class GrblInterface:
 
                 # if it is a message without ok or error (like after $$)
                 else:
-                    _log.debug(f'Message received "{out_temp}"')
-                    self.terminal.store_received(out_temp)
+                    if self.requested_config:
+                        if out_temp[0] == '$':
+                            item, value = out_temp.split('=')
+                            self.machine.grbl_config[item] = value
+                            if item == '$132':  # last item
+                                self.requested_config = False
+                    else:
+                        _log.debug(f'Message received "{out_temp}"')
+                        self.terminal.store_received(out_temp)

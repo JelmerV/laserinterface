@@ -13,7 +13,7 @@
         size_hint_y: 0.5
         orientation: 'vertical'
         Label:
-            text: 'Override laser power:'+str(root.power_override)
+            text: 'Override laser power: {}\n(act.:{})'.format(root.power_override, root.actual_power)
         Slider:
             min: 10
             max: 200
@@ -38,7 +38,7 @@
                 on_release: root.override_power('+10')
 
         Label:
-            text: 'Override feedrate:'+str(root.feed_override)
+            text: 'Override feedrate: {}\n(act.:{})'.format(root.feed_override, root.actual_feed)
         Slider:
             min: 10
             max: 200
@@ -69,7 +69,7 @@
         size_hint_y: 0.3
         orientation: 'vertical'
         Label:
-            text: 'Selected job:' + root.selected_file
+            text: 'Selected job:  ' + root.selected_file
         Label:
             text: 'Job Duration:  {:.0f}min, {:.0f}sec.'.format(root.job_duration/60, (root.job_duration)%60)
 
@@ -84,8 +84,51 @@
             Widget:
                 # spacer
             Button:
+                id: pause_button
                 text: 'pause'
                 disabled: (not root.job_active)
+                on_release: root.pause_job()
             Button:
                 text: 'stop'
                 disabled: (not root.job_active)
+                on_release: root.stop_job()
+
+<NotAtZeroPopup>:
+    job_control: None
+    size_hint: 0.4, 0.4
+
+    title: 'Not at zero position'
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        Label:
+            size_hint_y: 0.7
+            text_size: self.size
+            valign: 'middle'
+            text:
+                ('Attempted to start a cutting job but the machine is '\
+                'currently not at the configured zero position.\n\n'\
+                'You can set zero at the current position and continue, or '\
+                'start anyway with the previously configured zero position')
+
+        BoxLayout:
+            size_hint_y: 0.2
+            orientation: 'horizontal'
+
+            Button:
+                text: 'Set zero here'
+                on_release:
+                    root.dismiss()
+                    root.job_control.set_zero()
+
+            Button:
+                text: 'Continue anyway'
+                on_release:
+                    root.dismiss()
+                    root.job_control.start_here()
+
+            Button:
+                text: 'Cancel'
+                on_release:
+                    root.dismiss()

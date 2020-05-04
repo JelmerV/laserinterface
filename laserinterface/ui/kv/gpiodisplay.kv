@@ -89,6 +89,7 @@
         name: 'Emergency stop button:'
         state: root.config['INPUTS']['ESTOP']['TEXT_HIGH'] if root.estop_state else root.config['INPUTS']['ESTOP']['TEXT_LOW']
 
+
 <InputLabel@BoxLayout>:
     orientation: 'horizontal'
 
@@ -149,4 +150,3 @@
         id: LIGHT
         text: 'Enable internal lighting'
         on_release: root.gpio_con.pin_write('LIGHT', '!')
-

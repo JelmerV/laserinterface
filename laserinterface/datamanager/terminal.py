@@ -17,21 +17,16 @@ STATES = {
 
 class TerminalManager():
     def __init__(self, history_count=300):
-        self.history_count = history_count      #: line count stored in history
-
+        # TerminalManager keeps track of the lines in sendbuffers and history
+        # and offers the function to format them.
         # each line is stored as a list with the following items:
         #  - linenumber: int
         #  - state:      str
         #  - line:       str
-        self.line_out_buffer = []      #: lines to be send (grbl buffer full)
-        self.line_wait_for_ok = []     #: lines send and in grbl buffer
-        self.line_history = []         #: lines send and handled
-        self.comments = []           #: comments stored from program or gcode
 
-        self.line_number = 0
-        self.line_number_error = 0
-
+        self.history_count = history_count      #: line count stored in history
         self.callbacks = []
+        self.clear_all()
 
     def clear_all(self):
         self.line_out_buffer = []      #: lines to be send (grbl buffer full)

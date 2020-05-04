@@ -64,8 +64,9 @@
                     app.root.ids.home.ids.job_control.selected_file = root.selected_file
                     app.root.ids.sm.current = 'home'
 
+
 <PlottedGcode>:  # basic widget used for the drawing canvas
-    # size: 200, 1000
+    grid_size: 100
     job_duration: 0
 
     canvas.before:
@@ -134,6 +135,10 @@
                     width: 2
                     group: 'caption'
                     points: (self.center_x-self.width/3, self.center_y, self.center_x+self.width/3, self.center_y)
+
+        # TODO: draw grid
+        # Label:
+        #     text: 'Grid: '+str(root.grid_size)+'mm'
 
 <GcodeLine@BoxLayout>:
     orientation: 'horizontal'

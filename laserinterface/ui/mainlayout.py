@@ -17,7 +17,7 @@ from laserinterface.datamanager.machine import MachineStateManager
 from laserinterface.datamanager.terminal import TerminalManager
 from laserinterface.helpers.gpiointerface import GpioInterface
 from laserinterface.helpers.grblinterface import GrblInterface
-from laserinterface.helpers.gcodereader import GcodeReader
+# from laserinterface.helpers.gcodereader import GcodeReader
 
 # Widget submodules. Most are only used at the kv side, but import is needed
 from laserinterface.ui.fileselector import FileSelector, PlottedGcode
@@ -64,10 +64,12 @@ class MainLayout(FloatLayout):
 
         self.connectgrbl = ConnectGrbl()
         self.connectgrbl.grbl_com = self.grbl_com
-        if not self.grbl_com.connect():
+        if self.grbl_com.connect():
+            self.grbl_com.get_config()
+        else:
             self.connectgrbl.open()
 
-        Clock.schedule_interval(self.update_propperties, 0.02)
+        Clock.schedule_interval(self.update_propperties, 0.05)
 
     def pass_objects(self):
         self.ids.gpio_display.set_datamanager(
@@ -78,7 +80,7 @@ class MainLayout(FloatLayout):
         self.ids.home.ids.machine_view.set_datamanager(
             machine=self.state, grbl_com=self.grbl_com)
         self.ids.home.ids.job_control.set_datamanager(
-            machine=self.state, grbl_com=self.grbl_com)
+            terminal=self.terminal, machine=self.state, grbl_com=self.grbl_com)
 
         self.ids.move.ids.terminal_display.set_datamanager(
             terminal=self.terminal, grbl_com=self.grbl_com)

@@ -10,14 +10,14 @@ GENERAL:
   GCODE_DIR: /home/pi/gcode_files
 
   # useful for running/testing on desktop instead of
-  FULLSCREEN: False
-  MIMMIC_GPIO_LIB: True
-  MIMMIC_GPIO_CHANGE: False
+  FULLSCREEN: false
+  MIMMIC_GPIO_LIB: true
+  MIMMIC_GPIO_CHANGE: false
 
 GRBL:
   # The port of the arduino running grbl. connects at startup
-  # for logging use a spy url: "spy://COM3?file=path/to/file/grbl_serial.log"
-  PORT: "spy://COM3?file=D:/code/github/laserinterface/grbl_serial.log"
+  # for logging use a spy url: "spy://COM?file=path/to/file/grbl_serial.log"
+  PORT: COM3
 
   # poll freq influences error response time and framerate of the workspace simulator.
   # The recommended max by grbl developpers is 5-10Hz.

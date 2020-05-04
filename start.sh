@@ -1,1 +1,1 @@
-./.venv/bash/python -m laserinterface
+./venv/bash/python -m laserinterface

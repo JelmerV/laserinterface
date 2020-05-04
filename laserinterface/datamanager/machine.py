@@ -5,7 +5,7 @@ _log = logging.getLogger().getChild(__name__)
 class MachineStateManager():
 
     def __init__(self):
-
+        self.grbl_config = {}
         self.grbl_status = {}
         self.gpio_status = {}
         self.cooling_temp = 99
@@ -64,12 +64,15 @@ class MachineStateManager():
     def handle_grbl_report(self, state_in):
         state_items = state_in[1:-1].split('|')  # remove < > and split
         self.grbl_status['state'] = state_items.pop(0)
-        raw = {}
         for item in state_items:
-            name, value = item.split(':')
-            raw[name] = value
-            self.grbl_status[name] = value
-        # self.grbl_status['mach_pos'] =
+            try:
+                name, value = item.split(':')
+                if name not in ('A', 'Pn'):
+                    value = value.split(',')
+                    value = [float(i) for i in value]
+                self.grbl_status[name] = value
+            except ValueError:
+                _log.warning(f'received a corrupt status report {state_in}')
 
         if self.state_callbacks:
             for callback in self.state_callbacks:

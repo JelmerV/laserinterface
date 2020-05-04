@@ -8,11 +8,13 @@ import ruamel.yaml
 
 # kivy imports
 from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.properties import BooleanProperty
 from kivy.properties import BoundedNumericProperty
 from kivy.properties import NumericProperty
 from kivy.properties import StringProperty
+from kivy.properties import ObjectProperty
+from kivy.uix.popup import Popup
 
 # Submodules
 from laserinterface.data.grbl_doc import COMMANDS
@@ -23,7 +25,10 @@ _log = logging.getLogger().getChild(__name__)
 yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
-    trim_decimal = yaml.load(ymlfile, )['GENERAL']['TRIM_DECIMALS_TO']
+    general_config = yaml.load(ymlfile)['GENERAL']
+    trim_decimal = general_config['TRIM_DECIMALS_TO']
+    base_dir = general_config['GCODE_DIR']
+    base_dir = base_dir if base_dir[-1] in ('/', '\\') else base_dir+'/'
 
 
 class JobController(ShadedBoxLayout):
@@ -33,20 +38,48 @@ class JobController(ShadedBoxLayout):
     feed_override = BoundedNumericProperty(
         100, min=10, max=200,
         errorhandler=lambda x: 200 if x > 200 else 10)
-    job_progress = BoundedNumericProperty(100)
+
+    actual_feed = NumericProperty(-1)
+    actual_power = NumericProperty(-1)
 
     selected_file = StringProperty('<Please select a file>')
     job_active = BooleanProperty(False)
     job_duration = NumericProperty(0)
+    job_progress = BoundedNumericProperty(100)
+
+    paused = False
+    stop_sending_job = False
 
     def set_datamanager(self, machine=None, terminal=None, grbl_com=None):
-        self.grbl_com = grbl_com or self.grbl_com
+        self.grbl_com = grbl_com
+        self.machine = machine
+        self.terminal = terminal
+        self.not_zero_popup = NotAtZeroPopup(self)
 
-    def start_job(self):
+        if self.machine:
+            self.machine.add_state_callback(self.update_state)
+
+    def set_zero(self):
+        self.grbl_com.serial_send('G92 X0 Y0 Z0')
+
+    def start_here(self):
+        # called to start a job while not at the zero position
+        self.start_job(ignore_zero=True)
+
+    def start_job(self, ignore_zero=False):
         app = App.get_running_app()
 
         if self.selected_file == '<Please select a file>':
             app.root.ids.sm.current = 'job'
+            return
+
+        # check if at the configured 0 pos
+        mpos = self.machine.grbl_status['MPos']
+        wco = self.machine.grbl_status['WCO']
+        tol = 0.1
+        at_zero = abs(mpos[0]-wco[0]) <= tol and abs(mpos[1]-wco[1]) <= tol
+        if not ignore_zero and not at_zero:
+            self.not_zero_popup.open()
             return
 
         _log.info('starting job '+self.selected_file)
@@ -55,6 +88,21 @@ class JobController(ShadedBoxLayout):
 
         app.root.job_active = True
         self.job_active = True
+
+    def pause_job(self):
+        if self.paused:
+            self.grbl_com.serial_send(COMMANDS['cycle resume'])
+            self.paused = False
+            self.ids.pause_button.text = 'Pause'
+        else:
+            self.grbl_com.serial_send(COMMANDS['feed hold'])
+            self.paused = True
+            self.ids.pause_button.text = 'Continue'
+
+    def stop_job(self):
+        # first reset to immediatly halt the machine
+        self.stop_sending_job = True
+        self.grbl_com.serial_send('M5')
 
     def send_full_file(self):
         def update_progress(dt):
@@ -69,14 +117,20 @@ class JobController(ShadedBoxLayout):
 
         app = App.get_running_app()
         start_time = time.time()
-        timer = Clock.schedule_interval(update_progress, 0.5)
+        timer = Clock.schedule_interval(update_progress, 0.1)
 
-        with open(self.selected_file, 'r') as file:
+        with open(base_dir+self.selected_file, 'r') as file:
             lines = file.readlines()
 
         total_lines = len(lines)
         count = 0
         for line in lines:
+            if self.stop_sending_job:
+                timer.cancel()
+                Clock.schedule_once(finish_job, 0)
+                self.stop_sending_job = False
+                return
+
             line = line.strip().upper()
 
             # trim decimals:
@@ -95,9 +149,13 @@ class JobController(ShadedBoxLayout):
             if line == '':
                 continue
 
-            # send line but wait if buffer is full
-            self.grbl_com.serial_send(line, blocking=True)
+            # send line but wait if buffer is full, with 3 lines queued
+            self.grbl_com.serial_send(line, blocking=True, queue_count=3)
             count += 1
+
+        # wait until all lines are received
+        while len(self.terminal.line_wait_for_ok) > 0:
+            time.sleep(0.1)
 
         timer.cancel()
         Clock.schedule_once(finish_job, 0)
@@ -144,11 +202,23 @@ class JobController(ShadedBoxLayout):
         if gcode:
             Thread(target=self.grbl_com.serial_send, args=(gcode,)).start()
 
+    @mainthread
+    def update_state(self, status):
+        if status['state'] == 'Idle' and self.job_active:
+            print('gcode is not being send fast enough!!')
 
-# kv_file = Builder.load_file('jobcontrol.kv')
-if __name__ == '__main__':
-    class TestApp(App):
-        def build(self):
-            return JobController()
+        fs = status.get('FS')
+        if fs:
+            self.actual_feed = fs[0]
+            self.actual_power = fs[1]
+        else:
+            self.actual_feed = status.get('FS')
+            self.actual_power = -1
 
-    TestApp().run()
+
+class NotAtZeroPopup(Popup):
+    JobController = ObjectProperty()
+
+    def __init__(self, job_control, **kwargs):
+        super().__init__(**kwargs)
+        self.job_control = job_control

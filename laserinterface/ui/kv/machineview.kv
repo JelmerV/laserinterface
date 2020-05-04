@@ -9,6 +9,9 @@
     state: ''
     mpos: ''
     wpos: ''
+    grid_size: 100
+
+    on_size: root.draw_workspace()
 
     Widget:
         id: zero_mark
@@ -95,3 +98,6 @@
 
         Label:
             text: root.mpos
+
+        Label:
+            text: 'Grid: '+str(root.grid_size)+'mm'

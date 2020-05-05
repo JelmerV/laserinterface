@@ -13,6 +13,7 @@
     RecycleView:
         id: terminal_display
         size_hint_y: 0.7
+
         viewclass: 'TerminalLine'
 
         RecycleBoxLayout:
@@ -20,7 +21,7 @@
             height: self.minimum_height
             orientation: 'vertical'
 
-            default_size: None, dp(30)
+            default_size: None, None
             default_size_hint: 1, None
 
     BoxLayout:
@@ -50,6 +51,8 @@
         TextInput:
             id: command_input
             size_hint_x: 0.8
+            on_text_validate: root.send_command()
+            multiline: False
             text: '(write a command to send)'
 
         Button:
@@ -59,7 +62,8 @@
 
 <TerminalLine@BoxLayout>:
     orientation: 'horizontal'
-    spacing: 1
+    spacing: 3
+    height: text_label.height
 
     line_nr: 99
     state: '[ ? ]'
@@ -73,7 +77,7 @@
             size: self.size
 
     Label:
-        size_hint_x: 0.05
+        size_hint_x: 0.07
         padding: (10, 0)
         text: str(root.line_nr%1000)
     Label:
@@ -81,8 +85,9 @@
         padding: (10, 0)
         text: root.state
     Label:
+        id: text_label
         size_hint_x: 0.8
-        padding: (10, 0)
-        text_size: self.width, None
+        padding: (10, 2)
+        text_size: self.size
         height: self.texture_size[1]
         text: root.text

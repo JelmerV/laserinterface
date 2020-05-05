@@ -119,34 +119,34 @@
     Button:
         id: LASER
         text: 'Enable laser power: '
-        on_release: root.gpio_con.pin_write('LASER', '!')
+        on_release: root.gpio.pin_write('LASER', '!')
 
     Button:
         id: MOTOR
         text: 'Enable stepper moters: '
-        on_release: root.gpio_con.pin_write('MOTOR', '!')
+        on_release: root.gpio.pin_write('MOTOR', '!')
 
     Button:
         id: GRBL
         text: 'Halt GRBL'
-        on_release: root.gpio_con.pin_write('GRBL', '!')
+        on_release: root.gpio.pin_write('GRBL', '!')
 
     Button:
         id: COOLING
         text: 'Enable pump for water cooling'
-        on_release: root.gpio_con.pin_write('COOLING', '!')
+        on_release: root.gpio.pin_write('COOLING', '!')
 
     Button:
         id: AIR
         text: 'Enable air assist'
-        on_release: root.gpio_con.pin_write('AIR', '!')
+        on_release: root.gpio.pin_write('AIR', '!')
 
     Button:
         id: EXHAUST
         text: 'Enable exhaust fan'
-        on_release: root.gpio_con.pin_write('EXHAUST', '!')
+        on_release: root.gpio.pin_write('EXHAUST', '!')
 
     Button:
         id: LIGHT
         text: 'Enable internal lighting'
-        on_release: root.gpio_con.pin_write('LIGHT', '!')
+        on_release: root.gpio.pin_write('LIGHT', '!')

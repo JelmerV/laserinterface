@@ -1,6 +1,6 @@
 GENERAL:
   # duration of a test pulse in seconds (wait is done by a G4 command)
-  LASER_PULSE_DURATION: 0.2
+  LASER_PULSE_DURATION: 0.1
 
   # option to trim decimals before sending gcode to reduce the chars in grbl buffer
   # set False to disable

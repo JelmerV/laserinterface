@@ -20,8 +20,8 @@ selected_file = r'D:\home\pi\gcode_files\palmtree.nc'
 
 mach_state = MachineStateManager()
 terminal = TerminalManager()
-grbl_com = GrblInterface(terminal=terminal, machine_state=mach_state)
-if not grbl_com.connect():
+grbl = GrblInterface(terminal=terminal, machine=mach_state)
+if not grbl.connect():
     raise(Exception, 'could not connect')
 time.sleep(1)
 
@@ -29,20 +29,20 @@ _quit = False
 job_active = False
 
 for i in range(10):
-    grbl_com.serial_send(COMMANDS['feed +10'])
+    grbl.serial_send(COMMANDS['feed +10'])
 
 
 def checker():
     while not _quit:
         if job_active and mach_state.grbl_status.get('state') == 'Idle':
-            print('next lines:', grbl_com.lines_to_sent.queue)
+            print('next lines:', grbl.lines_to_sent.queue)
             s = 'Sending too slow:\n'
             for line in terminal.get_all_lines()[-10:]:
                 s += f"\t{'  '.join([str(i) for i in line])}\n"
             print(s)
             print('lines in send buffer = ', len(terminal.line_out_buffer))
             print('lines at grbl buffer = ', len(terminal.line_wait_for_ok))
-            print('chars in grbl buffer:', sum(grbl_com.chars_in_buffer.queue))
+            print('chars in grbl buffer:', sum(grbl.chars_in_buffer.queue))
             print('')
             time.sleep(0.2)
         time.sleep(0.01)
@@ -104,7 +104,7 @@ for line in lines:
         continue
 
     # send line but wait when the buffer is full
-    grbl_com.serial_send(line, blocking=True)
+    grbl.serial_send(line, blocking=True)
     count += 1
 
     print(f'e took: {time.time()-start_time}')

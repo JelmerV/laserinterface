@@ -6,11 +6,17 @@ import ruamel.yaml
 
 # kivy imports
 from kivy.app import App
-from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.window import Window
+from kivy.properties import ObjectProperty
 
-# import main module for ui
+# Helping submodules
+from laserinterface.datamanager.machine import MachineStateManager
+from laserinterface.datamanager.terminal import TerminalManager
+from laserinterface.helpers.gpiointerface import GpioInterface
+from laserinterface.helpers.grblinterface import GrblInterface
+
+# import all modules for the ui
 from laserinterface.ui.mainlayout import MainLayout
 
 _log = logging.getLogger().getChild(__name__)
@@ -30,16 +36,31 @@ else:
 class MainLayoutApp(App):
     kv_directory = join(dirname(__file__), 'ui/kv')
 
-    def build(self):
-        self.main_layout = MainLayout()
-        return self.main_layout
+    terminal = ObjectProperty()
+    machine = ObjectProperty()
+    grbl = ObjectProperty()
+    gpio = ObjectProperty()
 
-    def on_start(self):
-        Clock.schedule_once(self.main_layout.initialize, 0)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # initialize datamanagers
+        self.terminal = TerminalManager()
+        self.machine = MachineStateManager()
+
+        # initialize backend helpers
+        self.grbl = GrblInterface(machine=self.machine, terminal=self.terminal)
+        self.gpio = GpioInterface(machine=self.machine)
+
+    def build(self):
+        return MainLayout()
 
     def restart_program(self):
         # if systemctl is set up correctly the ar should restar automaticly
-        self.root.stop()
+        _log.warning('closing connections and stopping threads')
+        self.grbl.disconnect()
+        self.gpio.close()
+
         self.stop()
 
     def reboot_controller(self):

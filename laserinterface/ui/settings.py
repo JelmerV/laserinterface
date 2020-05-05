@@ -17,18 +17,17 @@ yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
     config = yaml.load(ymlfile, )['GRBL']
-print([comport.device for comport in serial.tools.list_ports.comports()])
 
 
 class ConnectGrbl(Popup):
-    grbl_com = ObjectProperty()
+    grbl = ObjectProperty()
     ports_dropdown = ObjectProperty()
     connect_state = StringProperty('Select the port of the arduino/grbl.')
 
     def on_open(self):
         self.prev_ports = []
         self.update_portlist()
-        self.update_event = Clock.schedule_interval(self.update_portlist, 0.5)
+        self.update_event = Clock.schedule_interval(self.update_portlist, 1)
         return super().on_dismiss()
 
     def on_dismiss(self):
@@ -37,6 +36,8 @@ class ConnectGrbl(Popup):
         return super().on_dismiss()
 
     def update_portlist(self, dt=0):
+        if not self.ids.get('ports_dropdown'):
+            return False
         portlist = self.get_ports()
         if portlist != self.prev_ports:
             self.ids.ports_dropdown.clear_widgets()
@@ -46,8 +47,7 @@ class ConnectGrbl(Popup):
                     size_hint_y=None,
                     height=30
                 )
-                btn.bind(
-                    on_release=lambda btn: self.select_port(btn.text))
+                btn.bind(on_release=lambda btn: self.select_port(btn.text))
                 self.ids.ports_dropdown.add_widget(btn)
 
         return True
@@ -70,10 +70,10 @@ class ConnectGrbl(Popup):
         self.ids.ports_dropdown.dismiss()
 
         self.connect_state = 'trying to connect to '+port
-        if not self.grbl_com.set_port(port):
-            self.grbl_com.connect()
+        if not self.grbl.set_port(port):
+            self.grbl.connect()
 
-        if self.grbl_com.connected:
+        if self.grbl.connected:
             self.connect_state = 'connected succesful'
             with open(config_file, 'r') as ymlfile:
                 full_config = yaml.load(ymlfile)
@@ -82,18 +82,3 @@ class ConnectGrbl(Popup):
                 yaml.dump(full_config, ymlfile)
         else:
             self.connect_state = 'Connection failed'
-
-
-if __name__ == '__main__':
-    from kivy.app import App  # noqa
-    from kivy.lang import Builder  # noqa
-    from os.path import join, dirname  # noqa
-
-    filename = join(dirname(__file__), 'kv', 'settings.kv')
-    kv_file = Builder.load_file(filename)
-
-    class TestApp(App):
-        def build(self):
-            return ConnectGrbl()
-
-    TestApp().run()

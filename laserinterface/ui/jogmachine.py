@@ -5,6 +5,7 @@ import logging
 import ruamel.yaml
 
 # kivy imports
+from kivy.app import App
 from kivy.properties import NumericProperty
 
 # Submodules
@@ -28,10 +29,15 @@ class Jogger(ShadedBoxLayout):
     stepsize = NumericProperty(10)
     feedrate = NumericProperty(5000)
 
-    def set_datamanager(self, machine=None, terminal=None, grbl_com=None):
-        self.machine_state = machine
-        self.grbl_com = grbl_com
-        self.terminal = terminal
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        app = App.get_running_app()
+
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
 
     def set_stepsize(self, val):
         val = int(val)
@@ -43,7 +49,6 @@ class Jogger(ShadedBoxLayout):
 
     def jog(self, command=''):
         command = command.upper()
-        print('moving to', command)
 
         # add '$J='+ for interruptable jogging
         gcode = '$J='+'G91G21'
@@ -66,54 +71,35 @@ class Jogger(ShadedBoxLayout):
 
         gcode += f'F{self.feedrate}'
 
-        self.grbl_com.serial_send(gcode)
+        self.grbl.serial_send(gcode)
         return
 
     def stop_jog(self):
-        self.grbl_com.serial_send(COMMANDS['cancel jog'])
+        self.grbl.serial_send(COMMANDS['cancel jog'])
 
     def go_to_zero(self):
-        self.grbl_com.serial_send(f'G90G28X0Y0F{self.feedrate}')
+        self.grbl.serial_send(f'$J=G90X0Y0F{self.feedrate}')
 
     def set_zero(self):
-        self.grbl_com.serial_send('G92 X0 Y0 Z0')
+        self.grbl.serial_send('G92X0Y0')
 
     def rehome(self):
-        self.grbl_com.serial_send(COMMANDS['start homing'])
+        self.grbl.serial_send(COMMANDS['start homing'])
 
     def unlock_alarm(self):
-        self.grbl_com.serial_send(COMMANDS['kill alarm'])
+        self.grbl.serial_send(COMMANDS['kill alarm'])
 
     def reset_grbl(self):
         def _reset():
-            self.grbl_com.serial_send(COMMANDS['soft reset'], blocking=True)
+            self.grbl.serial_send(COMMANDS['soft reset'], blocking=True)
             self.terminal.clear_all()
 
         send_thread = Thread(target=_reset)
         send_thread.start()
 
     def pulse_laser(self):
-        ''' turns laser on and moves in z direction to crate a delay '''
-        self.grbl_com.serial_send(f'M03 S1000 F{self.feedrate}')
-        self.grbl_com.serial_send('G1')
-        self.grbl_com.serial_send(f'G4 P{laser_pulse_duration}')
-        self.grbl_com.serial_send('G0 M5 S0')
-
-
-class Joystick():
-    pass
-
-
-if __name__ == '__main__':
-    from kivy.app import App  # noqa
-    from kivy.lang import Builder  # noqa
-    from os.path import join, dirname  # noqa
-
-    filename = join(dirname(__file__), 'kv', 'jogmachine.kv')
-    kv_file = Builder.load_file(filename)
-
-    class TestApp(App):
-        def build(self):
-            return Jogger()
-
-    TestApp().run()
+        ''' turns laser on for the configured period'''
+        self.grbl.serial_send(f'M03 S1000 F{self.feedrate}')
+        self.grbl.serial_send('G1')
+        self.grbl.serial_send(f'G4 P{laser_pulse_duration}')
+        self.grbl.serial_send('G0 M5 S0')

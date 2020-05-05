@@ -98,7 +98,7 @@
 
     GridLayout:
         pos_hint: {'right': 0.98, 'top': 0.98}
-        size_hint: 0.2, 0.1
+        size_hint: 0.2, 0.15
         id: caption
 
         cols: 2
@@ -136,9 +136,10 @@
                     group: 'caption'
                     points: (self.center_x-self.width/3, self.center_y, self.center_x+self.width/3, self.center_y)
 
-        # TODO: draw grid
-        # Label:
-        #     text: 'Grid: '+str(root.grid_size)+'mm'
+        Label:
+            text: 'Grid: '
+        Label:
+            text: str(root.grid_size)+'mm'
 
 <GcodeLine@BoxLayout>:
     orientation: 'horizontal'

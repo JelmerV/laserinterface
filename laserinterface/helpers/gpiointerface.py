@@ -31,11 +31,11 @@ class GpioInterface(Thread):
     # Also affect reaction speed on warnings!
     POLL_FREQ = 200
 
-    def __init__(self, machine_state, auto_start=True):
+    def __init__(self, machine, auto_start=True):
         Thread.__init__(self)
         self.daemon = True
 
-        self.state = machine_state  # is a datamanager object
+        self.state = machine  # is a datamanager object
 
         self._quit = False
 

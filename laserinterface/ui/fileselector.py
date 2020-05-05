@@ -94,41 +94,12 @@ class PlottedGcode(RelativeLayout):
         self.reader = GcodeReader()
         self.paths = []
 
-        # Clock.schedule_once(
-        #     lambda dt: self.draw_workspace(width=110, height=80), 1)
-        self.draw_workspace(width=110, height=80)
-
-    def draw_workspace(self, scale=1, width=300, height=300, spacing=100):
-        print('redrawing workspace grid')
-        self.canvas.remove_group('workspace')
-        with self.canvas:
-            # outline and middle line
-            Color(0.90, 0.90, 0.90)
-            Line(width=3, group='workspace',
-                 point=(0, 0, 30, 30))
-            Line(width=3, group='workspace',
-                 point=(-width/2, 0,
-                        width/2,  0))
-            Line(width=3, group='workspace',
-                 point=(0, -height/2,
-                        0, height/2))
-            Line(width=3, group='workspace',
-                 point=(-width/2, -height/2,
-                        -width/2, height/2,
-                        width/2, height/2,
-                        width/2, -height/2,
-                        -width/2, -height/2))
-            Color(0.60, 0.60, 0.60)
-            Line(points=(), width=3, group='workspace',
-                 dash_length=4, dash_offset=2)
-
     def draw_gcode_file(self, filename):
         def set_label(text):
             self.ids.plottedgcode_label.text = text
 
         Clock.schedule_once(lambda dt: set_label('Calculating path...'), 0)
 
-        self.draw_workspace()
         _log.info(f'Calculating paths of {filename}')
         self.paths = self.reader.handle_file(filename)
         self.max_x = self.reader.max_x
@@ -146,38 +117,66 @@ class PlottedGcode(RelativeLayout):
         if len(paths) < 1:
             return
 
-        size_x = -self.min_x + self.max_x
-        size_y = -self.min_y + self.max_y
-        scale_factor = min(self.width/size_x, self.height/size_y)
+        min_x = self.min_x
+        min_y = self.min_y
+        max_x = self.max_x
+        max_y = self.max_y
+        size_x = -min_x + max_x
+        size_y = -min_y + max_y
+        scale = min(self.width/size_x, self.height/size_y)
+
+        space_opt = [1, 2, 5, 10, 20, 50, 100, 200]
+        spacing = min(space_opt, key=lambda x: abs(x-size_x/4))
+        self.grid_size = spacing
 
         self.canvas.remove_group('gcode')
+        self.canvas.remove_group('grid')
         with self.canvas:
+            # draw max, min lines and place labels
             Color(0.90, 0.90, 0.90)
-            Line(width=1, group='workspace', points=(
-                0, (-self.min_y)*scale_factor,
-                self.width,  (-self.min_y)*scale_factor))
-            Line(width=1, group='workspace', points=(
-                (-self.min_x)*scale_factor, 0,
-                (-self.min_x)*scale_factor, self.height))
-            Line(width=1, group='workspace', dash_length=2, dash_offset=1,
-                 points=(
-                     0, (self.max_y-self.min_y) * scale_factor,
-                     self.width, (self.max_y-self.min_y)*scale_factor))
-            Line(width=1, group='workspace', dash_length=2, dash_offset=1,
-                 points=(
-                     (self.max_x-self.min_x) * scale_factor, 0,
-                     (self.max_x-self.min_x) * scale_factor, self.height))
+            Line(width=0.8, group='grid', points=(
+                0, (-min_y)*scale,
+                self.width,  (-min_y)*scale))
+            Line(width=0.8, group='grid', points=(
+                (-min_x)*scale, 0,
+                (-min_x)*scale, self.height))
+            Line(width=1, group='grid', points=(
+                0, (max_y-min_y)*scale,
+                (max_x-min_x)*scale, (max_y-min_y)*scale))
+            Line(width=0.6, group='grid', points=(
+                (max_x-min_x) * scale, 0,
+                (max_x-min_x) * scale, (max_y-min_y)*scale))
             self.ids.max_x_label.x = min(
-                size_x*scale_factor, self.width-self.ids.max_x_label.width)
+                size_x*scale, self.width-self.ids.max_x_label.width)
             self.ids.max_y_label.y = min(
-                size_y*scale_factor, self.height-self.ids.max_x_label.height)
+                size_y*scale, self.height-self.ids.max_x_label.height)
 
+            # draw grid:
+            Color(0.30, 0.30, 0.30)
+            for i in range(1, int(-min_x/spacing)+1):
+                Line(width=0.3, group='grid', points=(
+                     (-min_x-i*spacing)*scale, 0,
+                     (-min_x-i*spacing)*scale, self.height))
+            for i in range(1, int(self.width/scale/spacing)+1):
+                Line(width=0.3, group='grid', points=(
+                     (-min_x+i*spacing)*scale, 0,
+                     (-min_x+i*spacing)*scale, self.height))
+            for i in range(1, int(-min_y/spacing)+1):
+                Line(width=0.3, group='grid', points=(
+                     0,          (-min_y-i*spacing)*scale,
+                     self.width, (-min_y-i*spacing)*scale))
+            for i in range(1, int(self.height/scale/spacing)+1):
+                Line(width=0.3, group='grid', points=(
+                     0,          (-min_y+i*spacing)*scale,
+                     self.width, (-min_y+i*spacing)*scale))
+
+            # draw the paths of the gcode
             for _path in paths:
                 if not self.continue_painting:
                     self.continue_painting = True
                     return
 
-                w = 1.3 if _path.laser_on else 0.5
+                w = 1.1 if _path.laser_on else 0.5
                 # set color and line style depending on the movement type
                 if _path.move_type == MOVE_TYPE['RAPID']:
                     Color(0.8, 0.415, 0.886)
@@ -192,8 +191,8 @@ class PlottedGcode(RelativeLayout):
 
                 for i in range(len(_path.points_x)):
                     scaled_point = (
-                        (_path.points_x[i]-self.min_x)*scale_factor,
-                        (_path.points_y[i]-self.min_y)*scale_factor,
+                        (_path.points_x[i]-min_x)*scale,
+                        (_path.points_y[i]-min_y)*scale,
                     )
                     line.points.extend(scaled_point)
 

@@ -5,21 +5,13 @@ import os
 import ruamel.yaml
 
 # kivy imports
+from kivy.app import App
 from kivy import resources
 from kivy.clock import Clock
-from kivy.properties import BooleanProperty, NumericProperty
-
-# kivy widgets
+from kivy.properties import NumericProperty
 from kivy.uix.floatlayout import FloatLayout
 
-# Helping submodules
-from laserinterface.datamanager.machine import MachineStateManager
-from laserinterface.datamanager.terminal import TerminalManager
-from laserinterface.helpers.gpiointerface import GpioInterface
-from laserinterface.helpers.grblinterface import GrblInterface
-# from laserinterface.helpers.gcodereader import GcodeReader
 
-# Widget submodules. Most are only used at the kv side, but import is needed
 from laserinterface.ui.fileselector import FileSelector, PlottedGcode
 from laserinterface.ui.gpiodisplay import GpioInputIcons
 from laserinterface.ui.jobcontroller import JobController
@@ -27,7 +19,6 @@ from laserinterface.ui.jogmachine import Jogger
 from laserinterface.ui.machineview import MachineView
 from laserinterface.ui.settings import ConnectGrbl
 from laserinterface.ui.terminaldisplay import TerminalDisplay
-
 
 _log = logging.getLogger().getChild(__name__)
 
@@ -43,64 +34,29 @@ with open(config_file, 'r') as ymlfile:
 
 # main layout with topbar and screenmanager
 class MainLayout(FloatLayout):
-    job_active = BooleanProperty(False)
-    job_duration = NumericProperty(0)
     grbl_buffer = NumericProperty(0)
 
-    def initialize(self, *args):
-        # initialize datamanagers
-        self.terminal = TerminalManager()
-        self.state = MachineStateManager()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        # initialize backend helpers
-        self.grbl_com = GrblInterface(
-            terminal=self.terminal,
-            machine_state=self.state
-        )
-        self.gpio = GpioInterface(
-            machine_state=self.state
-        )
-        self.pass_objects()
+        app = App.get_running_app()
+
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
 
         self.connectgrbl = ConnectGrbl()
-        self.connectgrbl.grbl_com = self.grbl_com
-        if self.grbl_com.connect():
-            self.grbl_com.get_config()
+        self.connectgrbl.grbl = self.grbl
+        if self.grbl.connect():
+            self.grbl.get_config()
         else:
-            self.connectgrbl.open()
+            Clock.schedule_once(self.connectgrbl.open, 0)
 
-        Clock.schedule_interval(self.update_propperties, 0.05)
-
-    def pass_objects(self):
-        self.ids.gpio_display.set_datamanager(
-            machine=self.state)
-
-        self.ids.home.ids.terminal_display.set_datamanager(
-            terminal=self.terminal, grbl_com=self.grbl_com)
-        self.ids.home.ids.machine_view.set_datamanager(
-            machine=self.state, grbl_com=self.grbl_com)
-        self.ids.home.ids.job_control.set_datamanager(
-            terminal=self.terminal, machine=self.state, grbl_com=self.grbl_com)
-
-        self.ids.move.ids.terminal_display.set_datamanager(
-            terminal=self.terminal, grbl_com=self.grbl_com)
-        self.ids.move.ids.machine_view.set_datamanager(
-            machine=self.state)
-        self.ids.move.ids.jog_controller.set_datamanager(
-            terminal=self.terminal, machine=self.state, grbl_com=self.grbl_com)
-
-        self.ids.gpio.ids.inputs.set_datamanager(
-            machine=self.state)
-        self.ids.gpio.ids.outputs.set_datamanager(
-            machine=self.state, gpio_con=self.gpio)
-
-    def stop(self):
-        _log.warning('closing connections and stopping threads')
-        self.grbl_com.disconnect()
-        self.gpio.close()
+        Clock.schedule_interval(self.update_properties, 0.05)
 
     def open_grblconnect(self):
         self.connectgrbl.open()
 
-    def update_propperties(self, dt):
-        self.grbl_buffer = sum(self.grbl_com.chars_in_buffer.queue)
+    def update_properties(self, dt):
+        self.grbl_buffer = sum(self.grbl.chars_in_buffer.queue)

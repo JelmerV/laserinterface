@@ -7,14 +7,14 @@
 #             dash_length: 3
 <MachineView>:
     state: ''
-    mpos: ''
     wpos: ''
+    wco: ''
     grid_size: 100
 
     on_size: root.draw_workspace()
 
     Widget:
-        id: zero_mark
+        id: wco_mark
         size_hint: None, None
         size: 30, 30
         canvas:
@@ -30,7 +30,7 @@
                 points: (self.center_x, self.center_y-self.height/2.1, self.center_x, self.center_y+self.height/2.1,)
 
     Widget:
-        id: mach_mark
+        id: wpos_mark
         size_hint: None, None
         size: 20, 20
         canvas:
@@ -55,14 +55,14 @@
         BoxLayout:
             orientation: 'horizontal'
             Label:
-                text: 'mach state:'
+                text: 'Grbl state:'
             Label:
                 text: root.state
 
         BoxLayout:
             orientation: 'horizontal'
             Label:
-                text: 'Zero pos:'
+                text: 'Work offset: '
             Label:
                 canvas.after:
                     Color:
@@ -77,12 +77,12 @@
                         points: (self.center_x, self.center_y-10, self.center_x, self.center_y+10)
 
         Label:
-            text: root.wpos
+            text: root.wco
 
         BoxLayout:
             orientation: 'horizontal'
             Label:
-                text: 'Mach. pos:'
+                text: 'Work pos: '
             Label:
                 canvas.after:
                     Color:
@@ -97,7 +97,7 @@
                         points: (self.center_x, self.center_y-10, self.center_x, self.center_y+10)
 
         Label:
-            text: root.mpos
+            text: root.wpos
 
         Label:
             text: 'Grid: '+str(root.grid_size)+'mm'

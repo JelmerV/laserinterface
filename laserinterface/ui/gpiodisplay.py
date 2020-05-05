@@ -3,9 +3,10 @@
 import ruamel.yaml
 
 # kivy imports
-from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import BooleanProperty, NumericProperty
+from kivy.app import App
 from kivy.clock import mainthread
+from kivy.properties import BooleanProperty, NumericProperty
+from kivy.uix.boxlayout import BoxLayout
 
 # submodules
 from laserinterface.ui.themedwidgets import ShadedBoxLayout
@@ -33,12 +34,19 @@ class GpioInputIcons(BoxLayout):
 
     config = gpio_config
 
-    def set_datamanager(self, machine=None, terminal=None, grbl_com=None):
-        self.machine_state = machine
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        if self.machine_state:
-            self.machine_state.add_gpio_callback(self.change_state)
-            self.machine_state.add_temp_callback(self.change_temp)
+        app = App.get_running_app()
+
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
+
+        if self.machine:
+            self.machine.add_gpio_callback(self.change_state)
+            self.machine.add_temp_callback(self.change_temp)
 
     @mainthread
     def change_state(self, item, state):
@@ -65,12 +73,18 @@ class GpioInputLabels(ShadedBoxLayout):
 
     config = gpio_config
 
-    def set_datamanager(self, machine=None, terminal=None, grbl_com=None):
-        self.machine_state = machine or self.machine_state
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        if self.machine_state:
-            self.machine_state.add_gpio_callback(self.change_state)
-            self.machine_state.add_temp_callback(self.change_temp)
+        app = App.get_running_app()
+
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
+
+        self.machine.add_gpio_callback(self.change_state)
+        self.machine.add_temp_callback(self.change_temp)
 
     @mainthread
     def change_state(self, item, state):
@@ -91,12 +105,17 @@ class GpioInputLabels(ShadedBoxLayout):
 class GpioOutputController(ShadedBoxLayout):
     config = gpio_config
 
-    def set_datamanager(self, machine=None, gpio_con=None):
-        self.machine_state = machine
-        self.gpio_con = gpio_con
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        if self.machine_state:
-            self.machine_state.add_gpio_callback(self.pin_changed)
+        app = App.get_running_app()
+
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
+
+        self.machine.add_gpio_callback(self.pin_changed)
 
     @mainthread
     def pin_changed(self, item, state):

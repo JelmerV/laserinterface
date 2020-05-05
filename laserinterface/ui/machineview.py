@@ -1,5 +1,6 @@
 
 # kivy imports
+from kivy.app import App
 from kivy.clock import mainthread
 from kivy.graphics import Line, Color
 from kivy.properties import StringProperty, NumericProperty
@@ -8,30 +9,36 @@ from kivy.uix.relativelayout import RelativeLayout
 
 class MachineView(RelativeLayout):
     state = StringProperty()
-    mpos = StringProperty()
+    wco = StringProperty()
     wpos = StringProperty()
 
     grid_size = NumericProperty(100)
 
-    def set_datamanager(self, machine=None, terminal=None, grbl_com=None):
-        self.machine_state = machine
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-        if self.machine_state:
-            self.machine_state.add_state_callback(self.update_state)
+        app = App.get_running_app()
 
-        # Clock.schedule_once(lambda dt:
-        self.draw_workspace()  # , 0)
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
+
+        self.machine.add_state_callback(self.update_state)
 
     def draw_workspace(self, spacing=100):
-        self.grid_size = spacing or self.grid_size
         try:
-            width = float(self.machine_state.grbl_config['$130'])
-            height = float(self.machine_state.grbl_config['$131'])
+            width = float(self.machine.grbl_config['$130'])
+            height = float(self.machine.grbl_config['$131'])
         except (AttributeError, KeyError):
             width = 500.0
             height = 300.0
         scale = min(self.width/width, self.height/height)
         self.scale = scale
+
+        # find nearest power for a suitable spacing
+        spacing = min([5, 10, 20, 50, 100, 200], key=lambda x: abs(x-width/10))
+        self.grid_size = spacing
 
         self.canvas.remove_group('workspace')
         with self.canvas:
@@ -48,12 +55,12 @@ class MachineView(RelativeLayout):
     @mainthread
     def update_state(self, status):
         self.state = status['state']
-        self.mpos = f"({status['MPos'][0]:.2f}, {status['MPos'][0]:.2f})"
-        self.wpos = f"({status['WCO'][0]:.2f}, {status['WCO'][0]:.2f})"
+        self.wpos = f"({status['WPos'][0]:.2f}, {status['WPos'][1]:.2f})"
+        self.wco = f"({status['WCO'][0]:.2f}, {status['WCO'][1]:.2f})"
 
         # move the marker. homing position is the top
-        self.ids.mach_mark.center_x = status['MPos'][0]*self.scale
-        self.ids.mach_mark.center_y = status['MPos'][1]*self.scale+self.height
+        self.ids.wpos_mark.center_x = status['MPos'][0]*self.scale
+        self.ids.wpos_mark.center_y = status['MPos'][1]*self.scale+self.height
 
-        self.ids.zero_mark.center_x = status['WCO'][0]*self.scale
-        self.ids.zero_mark.center_y = status['WCO'][1]*self.scale + self.height
+        self.ids.wco_mark.center_x = status['WCO'][0]*self.scale
+        self.ids.wco_mark.center_y = status['WCO'][1]*self.scale+self.height

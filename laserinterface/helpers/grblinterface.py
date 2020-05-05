@@ -17,10 +17,10 @@ with open(config_file, 'r') as ymlfile:
 
 
 class GrblInterface:
-    def __init__(self, terminal=None, machine_state=None):
+    def __init__(self, terminal=None, machine=None):
         # Store or Create terminal and state instance
         self.terminal = terminal
-        self.machine = machine_state
+        self.machine = machine
 
         self.ser = serial.serial_for_url(
             url=config['PORT'],
@@ -187,6 +187,5 @@ class GrblInterface:
                             self.machine.grbl_config[item] = value
                             if item == '$132':  # last item
                                 self.requested_config = False
-                    else:
-                        _log.debug(f'Message received "{out_temp}"')
-                        self.terminal.store_received(out_temp)
+                    _log.debug(f'Message received "{out_temp}"')
+                    self.terminal.store_received(out_temp)

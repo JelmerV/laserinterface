@@ -50,17 +50,21 @@ class JobController(ShadedBoxLayout):
     paused = False
     stop_sending_job = False
 
-    def set_datamanager(self, machine=None, terminal=None, grbl_com=None):
-        self.grbl_com = grbl_com
-        self.machine = machine
-        self.terminal = terminal
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        app = App.get_running_app()
+
+        self.terminal = app.terminal
+        self.machine = app.machine
+        self.grbl = app.grbl
+        self.gpio = app.gpio
         self.not_zero_popup = NotAtZeroPopup(self)
 
-        if self.machine:
-            self.machine.add_state_callback(self.update_state)
+        self.machine.add_state_callback(self.update_state)
 
     def set_zero(self):
-        self.grbl_com.serial_send('G92 X0 Y0 Z0')
+        self.grbl.serial_send('G92 X0 Y0 Z0')
 
     def start_here(self):
         # called to start a job while not at the zero position
@@ -91,18 +95,18 @@ class JobController(ShadedBoxLayout):
 
     def pause_job(self):
         if self.paused:
-            self.grbl_com.serial_send(COMMANDS['cycle resume'])
+            self.grbl.serial_send(COMMANDS['cycle resume'])
             self.paused = False
             self.ids.pause_button.text = 'Pause'
         else:
-            self.grbl_com.serial_send(COMMANDS['feed hold'])
+            self.grbl.serial_send(COMMANDS['feed hold'])
             self.paused = True
             self.ids.pause_button.text = 'Continue'
 
     def stop_job(self):
         # first reset to immediatly halt the machine
         self.stop_sending_job = True
-        self.grbl_com.serial_send('M5')
+        self.grbl.serial_send('M5')
 
     def send_full_file(self):
         def update_progress(dt):
@@ -150,7 +154,7 @@ class JobController(ShadedBoxLayout):
                 continue
 
             # send line but wait if buffer is full, with 3 lines queued
-            self.grbl_com.serial_send(line, blocking=True, queue_count=3)
+            self.grbl.serial_send(line, blocking=True, queue_count=3)
             count += 1
 
         # wait until all lines are received
@@ -179,7 +183,7 @@ class JobController(ShadedBoxLayout):
             self.power_override += 10
 
         if gcode:
-            Thread(target=self.grbl_com.serial_send, args=(gcode,)).start()
+            Thread(target=self.grbl.serial_send, args=(gcode,)).start()
 
     def override_feed(self, command):
         gcode = 0
@@ -200,7 +204,7 @@ class JobController(ShadedBoxLayout):
             self.feed_override += 10
 
         if gcode:
-            Thread(target=self.grbl_com.serial_send, args=(gcode,)).start()
+            Thread(target=self.grbl.serial_send, args=(gcode,)).start()
 
     @mainthread
     def update_state(self, status):

@@ -1,4 +1,4 @@
-from laserinterface.data.grbl_doc import ERROR_CODES
+from laserinterface.data.grbl_doc import ERROR_CODES, CONFIG
 
 import logging
 _log = logging.getLogger().getChild(__name__)
@@ -85,11 +85,12 @@ class TerminalManager():
             line_nr = self.line_number_error
             line = ERROR_CODES.get(line, line)
         else:
+            if line[0] == '$':
+                line += f"    ({CONFIG.get(line.split('=')[0])})"
             state = STATES['recv_msg']
             line_nr = self.line_number
             self.line_number += 1
         line = [line_nr, state, line]
-        self.line_number += 1
         _log.debug(f'Added line to history -> ' + str(line))
         self.line_history.append(line)
 

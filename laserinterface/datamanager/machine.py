@@ -3,10 +3,9 @@ _log = logging.getLogger().getChild(__name__)
 
 
 class MachineStateManager():
-
     def __init__(self):
         self.grbl_config = {}
-        self.grbl_status = {}
+        self.grbl_status = {'WCO': [.0, .0, .0]}
         self.gpio_status = {}
         self.cooling_temp = 99
 
@@ -71,6 +70,18 @@ class MachineStateManager():
                     value = value.split(',')
                     value = [float(i) for i in value]
                 self.grbl_status[name] = value
+
+                if 'MPos' in self.grbl_status.keys():
+                    mpos = self.grbl_status['MPos']
+                    wco = self.grbl_status['WCO']
+                    wpos = [mpos[0]-wco[0], mpos[1]-wco[1]]
+                    self.grbl_status['WPos'] = wpos
+                elif 'WPos' in self.grbl_status.keys():
+                    wpos = self.grbl_status['WPos']
+                    wco = self.grbl_status['WCO']
+                    mpos = [mpos[0]+wco[0], mpos[1]+wco[1]]
+                    self.grbl_status['MPos'] = mpos
+
             except ValueError:
                 _log.warning(f'received a corrupt status report {state_in}')
 

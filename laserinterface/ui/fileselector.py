@@ -14,7 +14,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.relativelayout import RelativeLayout
 
 # submodules
-from laserinterface.helpers.gcodereader import GcodeReader, MOVE_TYPE
+from laserinterface.helpers.gcodereader import MOVE_TYPE
 
 
 _log = logging.getLogger().getChild(__name__)
@@ -23,7 +23,6 @@ yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
     base_dir = yaml.load(ymlfile)['GENERAL']['GCODE_DIR']
-    base_dir = base_dir if base_dir[-1] in ('/', '\\') else base_dir+'/'
 
 
 class FileSelector(BoxLayout):
@@ -32,22 +31,21 @@ class FileSelector(BoxLayout):
 
     valid_gcode_selected = False
 
-    def on_file_selected(self, filename='', *args, **kwarg):
+    def on_file_selected(self, selection):
         # if hasattr(self, 'painter'):
         #     self.ids.plotted_preview.continue_painting = False
         #     self.painter.join()
         #     self.ids.plotted_preview.continue_painting = True
-
-        if not filename:
-            self.gcode_text = '<Please select a file>'
+        if not selection:
             return
 
-        self.selected_file = path.basename(filename)
         app = App.get_running_app()
-        app.root.ids.home.ids.job_control.selected_file = filename
+        self.selected_file = path.relpath(selection[0], base_dir)
+        app.root.ids.home.ids.job_control.selected_file = self.selected_file
 
+        file_path = path.join(base_dir, self.selected_file)
         try:
-            with open(base_dir+self.selected_file) as gcode_file:
+            with open(file_path, 'r') as gcode_file:
                 gcode_text = [l.strip() for l in gcode_file.readlines(1000)]
             self.valid_gcode_selected = True
         except UnicodeDecodeError:
@@ -68,7 +66,7 @@ class FileSelector(BoxLayout):
         self.ids.gcode_preview.data = data
 
         self.painter = Thread(target=self.ids.plotted_preview.draw_gcode_file,
-                              args=(filename,))
+                              args=(file_path,))
         self.painter.start()
 
 
@@ -86,13 +84,15 @@ class PlottedGcode(RelativeLayout):
 
     job_duration = NumericProperty(0.00)
 
-    def __init__(self, **kwargs):
-        super(PlottedGcode, self).__init__(**kwargs)
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
         print('PlottedGcode init function called!')
         self.continue_painting = True
-
-        self.reader = GcodeReader()
         self.paths = []
+
+        app = App.get_running_app()
+        self.reader = app.gcode
 
     def draw_gcode_file(self, filename):
         def set_label(text):

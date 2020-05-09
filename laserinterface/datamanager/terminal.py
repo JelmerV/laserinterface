@@ -5,6 +5,7 @@ _log = logging.getLogger().getChild(__name__)
 
 
 STATES = {
+    'cancel':     '! Cancelled',
     'comment':    '! Comment: ',
     'send_wait':  '|>    [...]',
     'send_buf':   '|-->  [BUF]',
@@ -16,7 +17,7 @@ STATES = {
 
 
 class TerminalManager():
-    def __init__(self, history_count=300):
+    def __init__(self, history_count=500):
         # TerminalManager keeps track of the lines in sendbuffers and history
         # and offers the function to format them.
         # each line is stored as a list with the following items:
@@ -36,6 +37,17 @@ class TerminalManager():
 
         self.line_number = 0
         self.line_number_error = 0
+
+    def clear_buffers(self):
+        while len(self.line_out_buffer) > 0:
+            line = self.line_out_buffer.pop(0)
+            line[1] = STATES['cancel']
+            self.line_history.append(line)
+
+        while len(self.line_wait_for_ok) > 0:
+            line = self.line_wait_for_ok.pop(0)
+            line[1] = STATES['cancel']
+            self.line_history.append(line)
 
     def add_callback(self, callback):
         if callable(callback):
@@ -103,10 +115,13 @@ class TerminalManager():
         # except IndexError:
         #     _log.error('error while popping line from list')
         #     return False
-        if len(self.line_wait_for_ok) < 1:
-            return
 
-        line = self.line_wait_for_ok.pop(0)
+        try:
+            line = self.line_wait_for_ok.pop(0)
+        except IndexError:
+            _log.error('"ok" or "error" received but the send buffer was '
+                       'already empty. Some send line has been missed by '
+                       'the terminal manager.')
 
         if error:
             line[1] = STATES['send_err']
@@ -134,7 +149,12 @@ class TerminalManager():
     def send_to_buffer(self):
         # when a line is send from the output buffer and received at the buffer
         # of grbl. This function moves the line to the correct variables.
-        line = self.line_out_buffer.pop(0)
+        try:
+            line = self.line_out_buffer.pop(0)
+        except IndexError:
+            _log.error('A line switched from sending buffer to grbl buffer, '
+                       'but the line_out_buffer was empty')
+
         line[1] = STATES['send_buf']
         self.line_wait_for_ok.append(line)
 

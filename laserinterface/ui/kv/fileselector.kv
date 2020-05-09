@@ -28,7 +28,7 @@
                 height: self.minimum_height
                 orientation: 'vertical'
 
-                default_size: None, dp(30)
+                default_size: None, None
                 default_size_hint: 1, None
 
         # list of files to choose from
@@ -36,8 +36,10 @@
             size_hint_y: 0.5
             id: filechooser
             path: root.base_dir
-            on_selection:
-                root.on_file_selected(self.selection[0])
+            dir_select: False
+            show_hidden: True
+            on_selection: root.on_file_selected(self.selection)
+            filters: ['*.txt', '*.nc', '*.gcode', '*.tap', '*.cnc', '*.apt', '*.ncc', '*.hnc', '*.dnc']
 
         Label:
             size_hint_y: 0.1
@@ -144,6 +146,7 @@
 <GcodeLine@BoxLayout>:
     orientation: 'horizontal'
     spacing: 1
+    size_hint: 1, None
 
     gcode: '???'
     line_nr: 999
@@ -157,17 +160,12 @@
 
     Label:
         size_hint: 0.1, 1
-        padding: (10, 0)
+        padding: (10, 2)
         text: str(root.line_nr)
     Label:
-        # canvas.before:
-        #     Color:
-        #         rgba: (0.2, 0.2, 0.2, 1)
-        #     Rectangle:
-        #         size: self.size
-        #         pos: self.pos
-        size_hint: 0.9, 1
-        padding: (10, 0)
+        size_hint: 0.9, None
+        padding: (10, 2)
         text_size: self.width, None
         height: self.texture_size[1]
-        text: str(root.gcode)
+        on_size: root.height = self.height
+        text: root.gcode

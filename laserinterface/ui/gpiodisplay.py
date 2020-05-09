@@ -22,6 +22,8 @@ STATE = {
     'GREEN':  [0.2, 0.5, 0.2, 1],
     'ORANGE': [0.75, 0.6, 0.2, 1],
     'RED':    [0.5, 0.2, 0.2, 1],
+    'GREEN_BTN':  [0.3, 1.0, 0.3, 1],
+    'RED_BTN':    [1.0, 0.3, 0.3, 1],
 }
 
 
@@ -123,9 +125,9 @@ class GpioOutputController(ShadedBoxLayout):
             button = self.ids.get(item[4:])
             if button:
                 if state:
-                    button.background_color = STATE['GREEN']
+                    button.background_color = STATE['GREEN_BTN']
                 else:
-                    button.background_color = STATE['RED']
+                    button.background_color = STATE['RED_BTN']
 
 
 if __name__ == '__main__':

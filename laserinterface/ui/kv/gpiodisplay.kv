@@ -4,6 +4,9 @@
 #:set orange [0.545, 0.396, 0.215, 1]
 #:set red    [0.5, 0.2, 0.2, 1]
 
+#:set green_btn   [0.3, 1.0, 0.3, 1]
+#:set red_btn     [1.0, 0.3, 0.3, 1]
+
 <GpioInputIcons>:
     orientation: 'horizontal'
 
@@ -118,35 +121,42 @@
 
     Button:
         id: LASER
+        background_color: red_btn
         text: 'Enable laser power: '
         on_release: root.gpio.pin_write('LASER', '!')
 
     Button:
         id: MOTOR
+        background_color: red_btn
         text: 'Enable stepper moters: '
         on_release: root.gpio.pin_write('MOTOR', '!')
 
     Button:
         id: GRBL
+        background_color: red_btn
         text: 'Halt GRBL'
         on_release: root.gpio.pin_write('GRBL', '!')
 
     Button:
         id: COOLING
+        background_color: red_btn
         text: 'Enable pump for water cooling'
         on_release: root.gpio.pin_write('COOLING', '!')
 
     Button:
         id: AIR
+        background_color: red_btn
         text: 'Enable air assist'
         on_release: root.gpio.pin_write('AIR', '!')
 
     Button:
         id: EXHAUST
+        background_color: red_btn
         text: 'Enable exhaust fan'
         on_release: root.gpio.pin_write('EXHAUST', '!')
 
     Button:
         id: LIGHT
+        background_color: red_btn
         text: 'Enable internal lighting'
         on_release: root.gpio.pin_write('LIGHT', '!')

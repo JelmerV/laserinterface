@@ -99,5 +99,28 @@
         Label:
             text: root.wpos
 
-        Label:
-            text: 'Grid: '+str(root.grid_size)+'mm'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'Job size: '
+            Label:
+                canvas.after:
+                    Color:
+                        rgb: (0.60, 0.90, 0.90)
+                    Line:
+                        width: 1.1
+                        group: 'caption'
+                        points:
+                            (self.center_x+7, self.center_y+7, \
+                            self.center_x-7, self.center_y+7, \
+                            self.center_x-7, self.center_y-7, \
+                            self.center_x+7, self.center_y-7, \
+                            self.center_x+7, self.center_y+7)
+
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'Grid: '
+
+            Label:
+                text: str(root.grid_size)+'mm'

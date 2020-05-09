@@ -90,12 +90,8 @@ class Jogger(ShadedBoxLayout):
         self.grbl.serial_send(COMMANDS['kill alarm'])
 
     def reset_grbl(self):
-        def _reset():
-            self.grbl.serial_send(COMMANDS['soft reset'], blocking=True)
-            self.terminal.clear_all()
-
-        send_thread = Thread(target=_reset)
-        send_thread.start()
+        App.get_running_app().root.ids.home.ids.job_control.stop_job()
+        self.grbl.soft_reset()
 
     def pulse_laser(self):
         ''' turns laser on for the configured period'''

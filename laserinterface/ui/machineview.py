@@ -13,6 +13,7 @@ class MachineView(RelativeLayout):
     wpos = StringProperty()
 
     grid_size = NumericProperty(100)
+    full_report = {}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -23,8 +24,10 @@ class MachineView(RelativeLayout):
         self.machine = app.machine
         self.grbl = app.grbl
         self.gpio = app.gpio
+        self.gcode = app.gcode
 
         self.machine.add_state_callback(self.update_state)
+        self.gcode.add_new_job_callback(self.update_gcode)
 
     def draw_workspace(self, spacing=100):
         try:
@@ -54,8 +57,10 @@ class MachineView(RelativeLayout):
 
     @mainthread
     def update_state(self, status):
+        self.full_report = status
         self.state = status['state']
         self.wpos = f"({status['WPos'][0]:.2f}, {status['WPos'][1]:.2f})"
+        old_wco = self.wco
         self.wco = f"({status['WCO'][0]:.2f}, {status['WCO'][1]:.2f})"
 
         # move the marker. homing position is the top
@@ -64,3 +69,30 @@ class MachineView(RelativeLayout):
 
         self.ids.wco_mark.center_x = status['WCO'][0]*self.scale
         self.ids.wco_mark.center_y = status['WCO'][1]*self.scale+self.height
+
+        if old_wco != self.wco:
+            self.update_gcode()
+
+    @mainthread
+    def update_gcode(self):
+        if not self.full_report.get('WCO'):
+            return False
+
+        max_x = self.gcode.max_x
+        min_x = self.gcode.min_x
+        max_y = self.gcode.max_y
+        min_y = self.gcode.min_y
+        wco_x = self.full_report['WCO'][0]
+        wco_y = self.full_report['WCO'][1]
+
+        self.canvas.remove_group('gcode')
+        with self.canvas:
+            # draw max, min lines and place labels
+            Color(0.60, 0.90, 0.90)
+            Line(width=0.9, group='gcode', points=(
+                (wco_x+min_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
+                (wco_x+max_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
+                (wco_x+max_x)*self.scale, (wco_y+max_y)*self.scale+self.height,
+                (wco_x+min_x)*self.scale, (wco_y+max_y)*self.scale+self.height,
+                (wco_x+min_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
+            ))

@@ -15,6 +15,7 @@ from laserinterface.datamanager.machine import MachineStateManager
 from laserinterface.datamanager.terminal import TerminalManager
 from laserinterface.helpers.gpiointerface import GpioInterface
 from laserinterface.helpers.grblinterface import GrblInterface
+from laserinterface.helpers.gcodereader import GcodeReader
 
 # import all modules for the ui
 from laserinterface.ui.mainlayout import MainLayout
@@ -36,10 +37,14 @@ else:
 class MainLayoutApp(App):
     kv_directory = join(dirname(__file__), 'ui/kv')
 
+    # shared datamanagers
     terminal = ObjectProperty()
     machine = ObjectProperty()
+
+    # shared helpers
     grbl = ObjectProperty()
     gpio = ObjectProperty()
+    gcode = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -51,16 +56,19 @@ class MainLayoutApp(App):
         # initialize backend helpers
         self.grbl = GrblInterface(machine=self.machine, terminal=self.terminal)
         self.gpio = GpioInterface(machine=self.machine)
+        self.gcode = GcodeReader()
 
     def build(self):
         return MainLayout()
 
     def restart_program(self):
         # if systemctl is set up correctly the ar should restar automaticly
-        _log.warning('closing connections and stopping threads')
+        _log.warning('closing grbl connections and stopping threads')
         self.grbl.disconnect()
+        _log.warning('Stopping gpio threads')
         self.gpio.close()
 
+        _log.warning('Stopping kivy application')
         self.stop()
 
     def reboot_controller(self):

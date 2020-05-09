@@ -31,6 +31,7 @@ class Path:
 
 
 class GcodeReader:
+    new_job_callbacks = []
     complete_paths = []
     current_path = Path([0], [0])
 
@@ -57,6 +58,11 @@ class GcodeReader:
         self.max_y = 0
         self.min_x = 0
         self.min_y = 0
+
+    def add_new_job_callback(self, callback):
+        if callable(callback):
+            self.new_job_callbacks.append(callback)
+        return callable(callback)
 
     def handle_file(self, filename) -> list:
         ''' Read all lines in a file and call the handling function
@@ -100,6 +106,9 @@ class GcodeReader:
 
         _log.info(('Calculated all paths for the given gcode.'
                    f' {len(gcode_lines)} lines'))
+
+        for callback in self.new_job_callbacks:
+            callback()
         return self.complete_paths
 
     def _handle_command(self, command, line_number=0):

@@ -1,13 +1,14 @@
 # External Dependencies
 from threading import Thread
-import time
+import logging
+import queue
+import ruamel.yaml
 import serial
 import struct
-import ruamel.yaml
-import queue
+import time
 
-# Setup logging
-import logging
+from laserinterface.data.grbl_doc import COMMANDS
+
 _log = logging.getLogger().getChild(__name__)
 
 yaml = ruamel.yaml.YAML()
@@ -85,9 +86,9 @@ class GrblInterface:
         self._quit = True
         self.connected = False
 
-        _log.info('Waiting for threads to finish')
-        self.thread_poll_report.join()
-        self.thread_receiver.join()
+        # _log.info('Waiting for threads to finish')
+        # self.thread_poll_report.join()
+        # self.thread_receiver.join()
         # self.thread_send_gcode.join() # hangs on queue.get()
 
         self.ser.close()
@@ -99,6 +100,14 @@ class GrblInterface:
         while self.requested_config and time.time()-start_time < timeout:
             time.sleep(0.2)
         print('received full config: ', self.machine.grbl_config)
+
+    def soft_reset(self):
+        while not self.lines_to_sent.empty():
+            self.lines_to_sent.get()
+        while not self.chars_in_buffer.empty():
+            self.chars_in_buffer.get()
+        self.serial_send(COMMANDS['soft reset'])
+        self.terminal.clear_buffers()
 
     def serial_send(self, line, blocking=False, queue_count=0):
         '''
@@ -123,7 +132,7 @@ class GrblInterface:
             self.lines_to_sent.put(line)
             line_nr = self.lines_count + len(self.lines_to_sent.queue)
             if blocking:
-                while self.lines_count < line_nr-queue_count:
+                while self.lines_count < (line_nr - queue_count):
                     time.sleep(0.001)
         return True
 
@@ -132,8 +141,8 @@ class GrblInterface:
             line = self.lines_to_sent.get()
             # _log.info(f'sending a command -> "{line}"')
 
-            while (sum(self.chars_in_buffer.queue)+len(line) >=
-                    (config['RX_BUFFER_SIZE']-2)):
+            while (sum(self.chars_in_buffer.queue)+len(line)+1 >=
+                    (config['RX_BUFFER_SIZE']-1)):
                 # other thread is handling the incomming messages
                 # all we have to do, is wait for the buffer to be handled
                 time.sleep(0.001)

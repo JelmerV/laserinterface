@@ -20,10 +20,10 @@ setup(
 
     # dependencies
     install_requires=[
-        'docutils' ,
-        'pygments' ,
-        'pypiwin32' ,
-        'kivy_deps.sdl2==0.1.*' ,
+        'docutils',
+        'pygments',
+        'pypiwin32',
+        'kivy_deps.sdl2==0.1.*',
         'kivy_deps.glew==0.1.*',
         'kivy==1.11.1',
 

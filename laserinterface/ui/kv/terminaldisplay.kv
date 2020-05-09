@@ -63,11 +63,12 @@
 <TerminalLine@BoxLayout>:
     orientation: 'horizontal'
     spacing: 3
-    height: text_label.height
 
     line_nr: 99
     state: '[ ? ]'
     text: '...'
+
+    size_hint: 1, None
 
     canvas:
         Color:
@@ -88,6 +89,8 @@
         id: text_label
         size_hint_x: 0.8
         padding: (10, 2)
-        text_size: self.size
+        text_size: self.width, None
         height: self.texture_size[1]
+        on_size: root.height = self.height
+
         text: root.text

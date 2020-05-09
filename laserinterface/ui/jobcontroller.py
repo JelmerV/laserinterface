@@ -1,6 +1,7 @@
 
 # dependencies
 from threading import Thread
+from os import path
 import logging
 import time
 import re
@@ -28,7 +29,6 @@ with open(config_file, 'r') as ymlfile:
     general_config = yaml.load(ymlfile)['GENERAL']
     trim_decimal = general_config['TRIM_DECIMALS_TO']
     base_dir = general_config['GCODE_DIR']
-    base_dir = base_dir if base_dir[-1] in ('/', '\\') else base_dir+'/'
 
 
 class JobController(ShadedBoxLayout):
@@ -119,15 +119,17 @@ class JobController(ShadedBoxLayout):
             app.root.job_active = False
             self.job_active = False
 
+        total_lines = 1
+        count = 0
+
         app = App.get_running_app()
         start_time = time.time()
         timer = Clock.schedule_interval(update_progress, 0.1)
 
-        with open(base_dir+self.selected_file, 'r') as file:
+        with open(path.join(base_dir, self.selected_file), 'r') as file:
             lines = file.readlines()
 
         total_lines = len(lines)
-        count = 0
         for line in lines:
             if self.stop_sending_job:
                 timer.cancel()
@@ -154,7 +156,7 @@ class JobController(ShadedBoxLayout):
                 continue
 
             # send line but wait if buffer is full, with 3 lines queued
-            self.grbl.serial_send(line, blocking=True, queue_count=3)
+            self.grbl.serial_send(line, blocking=True, queue_count=5)
             count += 1
 
         # wait until all lines are received

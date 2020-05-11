@@ -21,9 +21,15 @@ For the best embedded experience, LaserInterface should start at bootup. Officia
 
 ## Further development
 
-TODO:
+Short term improvements:
 
-- [ ] Sending gcode is not fast enough
+- [ ] set up a list of command for a raspberry pi (start LaserInterface at boot; mount any usb in the gcode folder; make system read only;)
+- [ ] Release a completely set up image for the raspberry pi
+
+Planned features:
+
+- [ ] support for reading SVG and converting to gcode
+- [ ] support for reading png/jpg and conferting to engrave job
 - [ ] implement the configuration for automated gpio actions
 
 ### Reusing part of the software

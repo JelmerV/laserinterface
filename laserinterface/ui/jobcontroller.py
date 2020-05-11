@@ -27,7 +27,7 @@ yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
     general_config = yaml.load(ymlfile)['GENERAL']
-    trim_decimal = general_config['TRIM_DECIMALS_TO']
+    trim_dec = general_config['TRIM_DECIMALS_TO']
     base_dir = general_config['GCODE_DIR']
 
 
@@ -38,6 +38,9 @@ class JobController(ShadedBoxLayout):
     feed_override = BoundedNumericProperty(
         100, min=10, max=200,
         errorhandler=lambda x: 200 if x > 200 else 10)
+    repeat_count = BoundedNumericProperty(
+        100, min=1, max=10,
+        errorhandler=lambda x: 10 if x > 10 else 1)
 
     actual_feed = NumericProperty(-1)
     actual_power = NumericProperty(-1)
@@ -61,7 +64,7 @@ class JobController(ShadedBoxLayout):
         self.gpio = app.gpio
         self.not_zero_popup = NotAtZeroPopup(self)
 
-        self.machine.add_state_callback(self.update_state)
+        self.machine.add_grbl_callback(self.update_state)
 
     def set_zero(self):
         self.grbl.serial_send('G92 X0 Y0 Z0')
@@ -111,7 +114,7 @@ class JobController(ShadedBoxLayout):
     def send_full_file(self):
         def update_progress(dt):
             self.job_duration = int(time.time() - start_time)
-            self.job_progress = int(count*100.0/total_lines)
+            self.job_progress = int(count*100.0/total_lines/self.repeat_count)
 
         def finish_job(dt):
             _log.info('Finished sending a file.')
@@ -126,38 +129,44 @@ class JobController(ShadedBoxLayout):
         start_time = time.time()
         timer = Clock.schedule_interval(update_progress, 0.1)
 
+        re_decimals = re.compile(r'(\w[+-]?\d+\.\d{'+str(trim_dec)+r'})\d+')
+        re_comments = re.compile(r'\((.*?)\)|;(.*)')
+        re_redundant = re.compile(r'\+|\s|\(.*?\)|;.*')
+
         with open(path.join(base_dir, self.selected_file), 'r') as file:
             lines = file.readlines()
 
         total_lines = len(lines)
-        for line in lines:
-            if self.stop_sending_job:
-                timer.cancel()
-                Clock.schedule_once(finish_job, 0)
-                self.stop_sending_job = False
-                return
+        repeats = 0
+        while repeats < self.repeat_count:
+            repeats += 1
+            for line in lines:
+                if self.stop_sending_job:
+                    timer.cancel()
+                    Clock.schedule_once(finish_job, 0)
+                    self.stop_sending_job = False
+                    return
 
-            line = line.strip().upper()
+                line = line.strip().upper()
 
-            # trim decimals:
-            if trim_decimal:
-                line = re.sub(r'(\w[+-]?\d+\.\d{'+str(trim_decimal)+r'})\d+',
-                              r'\1', line)
+                # trim decimals:
+                if trim_dec:
+                    line = re_decimals.sub(r'\1', line)
 
-            # store comments to terminal
-            comments = re.search(r'\((.*?)\)|;(.*)', line)
-            if comments:
-                self.terminal.store_comment(comments.group(0))
+                # store comments to terminal
+                comments = re_comments.search(line)
+                if comments:
+                    self.terminal.store_comment(comments.group(0))
 
-            # Strip spaces and comments (**) and ;**
-            line = re.sub(r'\+|\s|\(.*?\)|;.*', '', line)
+                # Strip spaces and comments (**) and ;**
+                line = re_redundant.sub('', line)
 
-            if line == '':
-                continue
+                if line == '':
+                    continue
 
-            # send line but wait if buffer is full, with 3 lines queued
-            self.grbl.serial_send(line, blocking=True, queue_count=5)
-            count += 1
+                # send line but wait if buffer is full, with 3 lines queued
+                self.grbl.serial_send(line, blocking=True, queue_count=3)
+                count += 1
 
         # wait until all lines are received
         while len(self.terminal.line_wait_for_ok) > 0:

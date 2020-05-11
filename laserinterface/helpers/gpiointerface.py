@@ -18,7 +18,7 @@ with open(config_file, 'r') as ymlfile:
     config = config['GPIO']
 
 if mimmic_gpio:
-    _log.error('Could not import RPi.GPIO. Will be mimmicing the functions!')
+    _log.error(' Will be mimmicing the functions!')
     from laserinterface._tests.mimmic_gpio import GPIO_mimmic  # noqa
     import random
     GPIO = GPIO_mimmic(random_inputs=mimmic_gpio_change)
@@ -27,120 +27,97 @@ else:
 
 
 class GpioInterface(Thread):
-    # frequency of checking the in and outputs.
-    # Also affect reaction speed on warnings!
-    POLL_FREQ = 200
-
     def __init__(self, machine, auto_start=True):
         Thread.__init__(self)
         self.daemon = True
 
-        self.state = machine  # is a datamanager object
+        self.machine = machine  # is a datamanager object
 
         self._quit = False
 
         self.last_update_time = 0
-        self.input_values = {'temp': 99}
-        self.output_values = {}
-        self.warnings = set()
 
         GPIO.setmode(getattr(GPIO, config['PINTYPE']))
-        for item in config['INPUTS'].keys():
-            GPIO.setup(config['INPUTS'][item]['PIN'], GPIO.IN)
-            self.input_values[item] = GPIO.input(config['INPUTS'][item]['PIN'])
-        for item in config['OUTPUTS'].keys():
-            GPIO.setup(config['OUTPUTS'][item], GPIO.OUT, initial=True)
-            self.output_values[item] = False
+        for name, dic in config['INPUTS'].items():
+            GPIO.setup(dic['PIN'], GPIO.IN)
+            self.machine.update_gpio(f'IN_{name}', GPIO.input(dic['PIN']))
+            # self.on_change(f'IN_{name}', GPIO.input(dic['PIN']))
+        for name, pin_nr in config['OUTPUTS'].items():
+            GPIO.setup(pin_nr, GPIO.OUT, initial=True)
+            self.machine.update_gpio(f'OUT_{name}', False)
+            # self.on_change(f'OUT_{name}', False)
 
         if auto_start:
             self.start()
 
     def pin_write(self, item, next_value=False):
-        # if next_value is '!' toggle the output
-        if (next_value == '!'):
-            next_value = not self.output_values[item]
-
-        if self.output_values[item] == next_value:
+        if self.machine.gpio_status[f'OUT_{item}'] == next_value:
             # nothing changing
             return
 
-        # switch something off
-        if (not next_value):
-            GPIO.output(config['OUTPUTS'][item], True)
-            self.output_values[item] = False
-            self.state.update_gpio('OUT_'+item, False)
-        # switch something on
-        else:
-            if (item == 'laser'):
-                _log.info('activating laser.'
-                          'also activates cooling and air assist')
-                # when laser is turned on, also
-                # enable air assist and water cooling
-                self.pin_write('cooling', True)
-                self.pin_write('air', True)
-                # then enable laser power
-                GPIO.output(config['OUTPUTS']['laser'], False)
-                self.output_values['laser'] = True
-                self.state.update_gpio('OUT_LASER', False)
-            else:
-                GPIO.output(config['OUTPUTS'][item], False)
-                self.output_values[item] = True
-                self.state.update_gpio('OUT_'+item, True)
+        # if next_value is '!' toggle the output
+        if (next_value == '!'):
+            next_value = not self.machine.gpio_status['OUT_'+item]
+
+        GPIO.output(config['OUTPUTS'][item], not next_value)
+        self.on_change(f'OUT_{item}', next_value)
 
         _log.info('toggling ' + item + '. next value is ' + str(next_value))
         return next_value
 
-    def warning_callback(self):
-        # called whenever a pin gets low
-        self.pin_write('GRBL', False)
-        self.pin_write('LASER', False)
-        time.sleep(0.1)
-        self.pin_write('MOTOR', False)
+    def on_change(self, item, new_state):
+        self.machine.update_gpio(item, new_state)
+
+        # gpio callbacks can be configured in the config.yaml These will be:
+        # events:     {OUT/IN}_{NAME/ANY}_{ON/OFF/ANY}
+        # actions:    OUT_{NAME}: {ON/OFF/EQUAL/OPPOSITE}
+        for event_name, actions in config['CALLBACKS'].items():
+            event_name
+            _type, name = event_name.upper().split('_', 1)
+            name, event = name.rsplit('_', 1)
+            # check if name and value match
+            if (item.startswith(_type) and (name == 'ANY' or name in item) and
+                    (event == 'ANY') or (event == 'ON' and new_state) or
+                    (event == 'OFF' and not new_state)):
+                _log.info(f'{name} changed and triggered {actions}')
+                for output, next_val in actions.items():
+                    out_name = output[4:]
+                    if next_val == 'ON':
+                        self.pin_write(out_name, True)
+                    elif next_val == 'OFF':
+                        self.pin_write(out_name, False)
+                    elif next_val == 'EQUAL':
+                        self.pin_write(out_name, new_state)
+                    elif next_val == 'OPPOSITE':
+                        self.pin_write(out_name, not new_state)
+                    else:
+                        _log.warning(f'Configured callback state ({next_val})'
+                                     'not recognized')
 
     def close(self):
         self._quit = True
         GPIO.cleanup()
 
     def run(self):
-        '''Function runs when Thread.start() is called'''
-        _log.info("starting polling loop. frequency is "+str(self.POLL_FREQ))
+        ''' Function runs when Thread.start() is called '''
+        _log.info(f'starting polling loop. frequency is {config["POLL_FREQ"]}')
 
         temp_thread = Thread(target=self.temp_thread, daemon=True)
         temp_thread.start()
 
-        temp_limit = float(config['TEMP_RANGE']['RED'])
-
-        next_time = time.time()
         while not self._quit:
-            # clear active warnings
-            last_warnings = self.warnings.copy()
-            self.warnings.clear()
-
             # get gpio inputs
-            for item in config['INPUTS'].keys():
-                new_state = not GPIO.input(config['INPUTS'][item]['PIN'])
-                if not new_state:
-                    self.warnings.add(item)
-                if self.input_values[item] != new_state:
-                    self.input_values[item] = new_state
-                    self.state.update_gpio('IN_'+item, self.input_values[item])
+            for name, dic in config['INPUTS'].items():
+                new_state = not GPIO.input(dic['PIN'])
+                if self.machine.gpio_status[f'IN_{name}'] != new_state:
+                    self.on_change(f'IN_{name}', new_state)
 
-            if (self.input_values['temp'] >= temp_limit):
-                self.warnings.add('temp')
-
-            # handle active warnings
-            if (len(self.warnings) > 0) and (self.warnings != last_warnings):
-                _log.warning("Warnings activated -> "+str(self.warnings))
-                self.warning_callback()
-
-            next_time += 1/config['POLL_FREQ']
-            sleep_time = next_time - time.time()
-            if sleep_time > 0:
-                # print('polling gpio reruns in:', sleep_time, 'secs')
-                time.sleep(sleep_time)
+            time.sleep(1/config['POLL_FREQ'])
 
     def temp_thread(self):
         if mimmic_gpio:
+            if not mimmic_gpio_change:
+                return
             temp_c = 17
             up = True
             while not self._quit:
@@ -153,9 +130,8 @@ class GpioInterface(Thread):
                         up = not up
                     temp_c -= random.uniform(-0.05, 0.4)
 
-                self.state.update_temp(temp_c)
-                self.input_values['temp'] = temp_c
-                time.sleep(0.1)
+                self.machine.update_temp(temp_c)
+                time.sleep(0.2)
             return
 
         # find file url for the ds18b20 readings
@@ -186,7 +162,6 @@ class GpioInterface(Thread):
                 temp_string = lines[1][equals_pos+2:]
                 temp_c = float(temp_string) / 1000.0
 
-            self.input_values['temp'] = temp_c
-            self.state.update_temp(temp_c)
+            self.machine.update_temp(temp_c)
 
         return

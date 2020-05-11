@@ -160,3 +160,69 @@
         background_color: red_btn
         text: 'Enable internal lighting'
         on_release: root.gpio.pin_write('LIGHT', '!')
+
+
+<GpioCallbacks>:
+    orientation: 'vertical'
+
+    Label:
+        size_hint_y: None
+        height: 10
+        text: "Configured GPIO callbacks (in data/config.yaml)"
+
+    RecycleView:
+        id: rv
+        size_hint_y: 1
+
+        viewclass: 'CallbackBlock'
+
+        RecycleBoxLayout:
+            size_hint: 1, None
+            height: self.minimum_height
+            orientation: 'vertical'
+
+            default_size: None, None
+            default_size_hint: 1, None
+
+
+<CallbackBlock@BoxLayout>:
+    orientation: 'vertical'
+    size_hint: 1, None
+    padding: 20,10
+
+    event: ''
+    action: ''
+
+    Widget:
+        #spacer
+
+    Label:
+        canvas.before:
+            Color:
+                rgb: (0.2, 0.2, 0.25)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        id: event_label
+        padding: (10, 3)
+        size_hint: 1, None
+        text_size: self.width, None
+        height: self.texture_size[1]
+        text: root.event
+
+    Label:
+        canvas.before:
+            Color:
+                rgb: (0.2, 0.25, 0.25)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        size_hint: 1, None
+        height: self.texture_size[1]
+        padding: (50, 3)
+        text_size: self.width, None
+        on_size: root.height = self.height + 30
+        text: root.action
+
+    Widget:
+        #spacer

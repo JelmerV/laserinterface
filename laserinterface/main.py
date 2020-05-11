@@ -6,6 +6,7 @@ import ruamel.yaml
 
 # kivy imports
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.properties import ObjectProperty
@@ -57,6 +58,9 @@ class MainLayoutApp(App):
         self.grbl = GrblInterface(machine=self.machine, terminal=self.terminal)
         self.gpio = GpioInterface(machine=self.machine)
         self.gcode = GcodeReader()
+
+        Clock.schedule_once(lambda dt: self.gpio.pin_write('LIGHT', True), 2)
+        Clock.schedule_once(lambda dt: self.gpio.pin_write('COOLING', True), 2)
 
     def build(self):
         return MainLayout()

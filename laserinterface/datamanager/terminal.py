@@ -109,19 +109,13 @@ class TerminalManager():
         self.callback()
 
     def received_ok(self, error=False):
-        # line from grbl buffer was handled. move to history
-        # try:
-        #     line = self.line_wait_for_ok.pop(0)
-        # except IndexError:
-        #     _log.error('error while popping line from list')
-        #     return False
-
         try:
             line = self.line_wait_for_ok.pop(0)
         except IndexError:
             _log.error('"ok" or "error" received but the send buffer was '
                        'already empty. Some send line has been missed by '
                        'the terminal manager.')
+            return
 
         if error:
             line[1] = STATES['send_err']
@@ -154,6 +148,7 @@ class TerminalManager():
         except IndexError:
             _log.error('A line switched from sending buffer to grbl buffer, '
                        'but the line_out_buffer was empty')
+            return
 
         line[1] = STATES['send_buf']
         self.line_wait_for_ok.append(line)

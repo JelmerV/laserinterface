@@ -52,18 +52,29 @@
         size: 120, 120
         id: caption
 
+        canvas.before:
+            Color:
+                rgba: (0.5, 0.5, 0.5, 0.4)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
         BoxLayout:
             orientation: 'horizontal'
             Label:
+                size_hint_x: 0.6
                 text: 'Grbl state:'
             Label:
+                size_hint_x: 0.4
                 text: root.state
 
         BoxLayout:
             orientation: 'horizontal'
             Label:
+                size_hint_x: 0.7
                 text: 'Work offset: '
             Label:
+                size_hint_x: 0.3
                 canvas.after:
                     Color:
                         rgb: (0.8, 0.415, 0.886)
@@ -82,8 +93,10 @@
         BoxLayout:
             orientation: 'horizontal'
             Label:
+                size_hint_x: 0.7
                 text: 'Work pos: '
             Label:
+                size_hint_x: 0.3
                 canvas.after:
                     Color:
                         rgb: (0.9, 0.1, 0.1)
@@ -102,25 +115,28 @@
         BoxLayout:
             orientation: 'horizontal'
             Label:
+                size_hint_x: 0.7
                 text: 'Job size: '
             Label:
+                size_hint_x: 0.3
                 canvas.after:
                     Color:
-                        rgb: (0.60, 0.90, 0.90)
+                        rgb: (0.20, 0.80, 0.90)
                     Line:
                         width: 1.1
                         group: 'caption'
                         points:
-                            (self.center_x+7, self.center_y+7, \
-                            self.center_x-7, self.center_y+7, \
-                            self.center_x-7, self.center_y-7, \
-                            self.center_x+7, self.center_y-7, \
-                            self.center_x+7, self.center_y+7)
+                            (self.center_x+7, self.center_y+5, \
+                            self.center_x-7, self.center_y+5, \
+                            self.center_x-7, self.center_y-5, \
+                            self.center_x+7, self.center_y-5, \
+                            self.center_x+7, self.center_y+5)
 
         BoxLayout:
             orientation: 'horizontal'
             Label:
+                size_hint_x: 0.6
                 text: 'Grid: '
-
             Label:
+                size_hint_x: 0.4
                 text: str(root.grid_size)+'mm'

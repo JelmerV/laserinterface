@@ -4,7 +4,7 @@ import ruamel.yaml
 
 # kivy imports
 from kivy.app import App
-from kivy.clock import mainthread
+from kivy.clock import Clock, mainthread
 from kivy.properties import BooleanProperty, NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 
@@ -130,6 +130,30 @@ class GpioOutputController(ShadedBoxLayout):
                     button.background_color = STATE['RED_BTN']
 
 
+class GpioCallbacks(ShadedBoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        Clock.schedule_once(lambda dt: self.setup(), 0)
+
+    def setup(self):
+        data = []
+        for event, actions in gpio_config['CALLBACKS'].items():
+            name, new_value = event.rsplit('_', 1)
+            event = f"When '{name}' switches to '{new_value}' do:"
+
+            acts = []
+            for output, next_val in actions.items():
+                acts.append(f"Switch '{output}' to be '{next_val}'")
+            actions = '\n'.join(acts)
+
+            data.append({
+                'event': event,
+                'action': actions,
+            })
+
+        self.ids.rv.data = data
+
+
 if __name__ == '__main__':
     from kivy.app import App  # noqa
     from kivy.lang import Builder  # noqa
@@ -144,6 +168,6 @@ if __name__ == '__main__':
 
     class TestApp(App):
         def build(self):
-            return GpioInputIcons()
+            return GpioCallbacks()
 
     TestApp().run()

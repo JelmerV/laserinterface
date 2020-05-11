@@ -9,10 +9,10 @@ GENERAL:
   # directory where usb gets mounted and where gcode is stored
   GCODE_DIR: /home/pi/gcode_files
 
-  # useful for running/testing on desktop instead of
+  # useful for running/testing on desktop instead of rpi
   FULLSCREEN: false
   MIMMIC_GPIO_LIB: true
-  MIMMIC_GPIO_CHANGE: false
+  MIMMIC_GPIO_CHANGE: true
 
 GRBL:
   # The port of the arduino running grbl. connects at startup
@@ -69,3 +69,35 @@ GPIO:
       PIN: 15
       TEXT_LOW: Open
       TEXT_HIGH: Closed
+
+  # Callbacks are the event that happen when a specific gpio value changes.
+  # The name defines when it gets called. Use the following format:
+  #     {OUT/IN}_{NAME/ANY}_{ON/OFF/ANY}
+  #
+  # The outputs that should be toggled are specified with:
+  #     OUT_{NAME}: {ON/OFF/EQUAL/OPPOSITE}
+  #
+  # if output/input with that name changes to the specified value, all of the
+  # following items will be set to the new value.
+  CALLBACKS:
+    # The following example ensures the cooling and the exhaust are turned on
+    # when the laser is turned on.
+    OUT_LASER_ON:
+      OUT_COOLING: ON
+      OUT_EXHAUST: ON
+    # the next example switches the air assist to be on when the laser is on,
+    # and off, when the laser turns off
+    OUT_LASER_ANY:
+      OUT_AIR: EQUAL
+
+    # halt grbl when an input switched off (door opened, no water flowing, etc.)
+    IN_ANY_OFF:
+      OUT_GRBL: OFF
+
+    IN_FRONT_COVER_OFF:
+      OUT_LASER: OFF
+      OUT_MOTOR: OFF
+
+    IN_TOP_COVER_OFF:
+      OUT_LASER: OFF
+      OUT_MOTOR: OFF

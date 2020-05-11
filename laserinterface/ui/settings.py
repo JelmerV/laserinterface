@@ -11,6 +11,8 @@ from kivy.properties import ObjectProperty, StringProperty
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 
+from laserinterface.data.grbl_doc import CONFIG
+
 _log = logging.getLogger().getChild(__name__)
 
 yaml = ruamel.yaml.YAML()
@@ -82,3 +84,19 @@ class ConnectGrbl(Popup):
                 yaml.dump(full_config, ymlfile)
         else:
             self.connect_state = 'Connection failed'
+
+
+class GrblConfig(Popup):
+    grbl = ObjectProperty()
+
+    def on_open(self):
+        data = []
+        for name, value in self.grbl.machine.grbl_config.items():
+            data.append({
+                'id': name,
+                'name': name,
+                'value': str(value),
+                'desc': CONFIG.get(name, '')
+            })
+
+        self.ids.rv.data = data

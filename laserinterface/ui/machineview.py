@@ -26,7 +26,7 @@ class MachineView(RelativeLayout):
         self.gpio = app.gpio
         self.gcode = app.gcode
 
-        self.machine.add_state_callback(self.update_state)
+        self.machine.add_grbl_callback(self.update_state)
         self.gcode.add_new_job_callback(self.update_gcode)
 
     def draw_workspace(self, spacing=100):
@@ -88,7 +88,7 @@ class MachineView(RelativeLayout):
         self.canvas.remove_group('gcode')
         with self.canvas:
             # draw max, min lines and place labels
-            Color(0.60, 0.90, 0.90)
+            Color(0.20, 0.80, 0.90)
             Line(width=0.9, group='gcode', points=(
                 (wco_x+min_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
                 (wco_x+max_x)*self.scale, (wco_y+min_y)*self.scale+self.height,

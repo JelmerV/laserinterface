@@ -79,6 +79,8 @@ class GrblInterface:
         self.thread_send_gcode = Thread(target=self._gcode_sender, daemon=True)
         self.thread_send_gcode.start()
 
+        self.get_config()
+
         return True
 
     def disconnect(self):
@@ -193,8 +195,13 @@ class GrblInterface:
                     if self.requested_config:
                         if out_temp[0] == '$':
                             item, value = out_temp.split('=')
+                            if '.' in value:
+                                value = float(value)
+                            else:
+                                value = int(value)
                             self.machine.grbl_config[item] = value
                             if item == '$132':  # last item
                                 self.requested_config = False
-                    _log.debug(f'Message received "{out_temp}"')
-                    self.terminal.store_received(out_temp)
+                    else:
+                        _log.debug(f'Message received "{out_temp}"')
+                        self.terminal.store_received(out_temp)

@@ -179,11 +179,12 @@
             padding: 10
             GpioInputLabels:
                 id: inputs
-                size_hint_y: 0.6
+                size_hint_y: 0.5
 
-            Label:
-                text: "option to define automation rules? to be added"
+            GpioCallbacks:
+                id: callbacks
                 size_hint_y: 0.4
+
 
         GpioOutputController:
             id: outputs
@@ -192,14 +193,15 @@
 <Hamburger@DropDown>:
     # on_parent: self.dismiss()
     Button:
-        text: 'Connect GRBL'
+        text: 'Connect grbl'
         size_hint_y: None
         height: 44
         on_release: app.root.open_grblconnect()
     Button:
-        text: 'Settings'
+        text: 'Grbl configuration'
         size_hint_y: None
         height: 44
+        on_release: app.root.open_grblconfig()
     Button:
         text: 'Exit'
         size_hint_y: None

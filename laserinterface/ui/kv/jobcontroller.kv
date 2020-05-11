@@ -6,6 +6,7 @@
     padding: 10
 
     job_duration: 0
+    repeat_count: 1
 
     BoxLayout:
         spacing: 10
@@ -66,29 +67,53 @@
     BoxLayout:
         spacing: 10
         padding: 10
-        size_hint_y: 0.3
+        size_hint_y: 0.5
         orientation: 'vertical'
         Label:
+            size_hint_y: 0.2
             text: 'Selected job:  ' + root.selected_file
         Label:
+            size_hint_y: 0.2
             text: 'Job Duration:  {:.0f}min, {:.0f}sec.'.format(root.job_duration/60, (root.job_duration)%60)
 
         ProgressBar:
+            size_hint_y: 0.2
             value: root.job_progress
         BoxLayout:
+            size_hint_y: 0.3
             orientation: 'horizontal'
+            BoxLayout:
+                size_hint_x: 0.25
+                orientation: 'vertical'
+                Label:
+                    text: 'Repeats: {}'.format(root.repeat_count)
+                BoxLayout:
+                    orientation: 'horizontal'
+                    Button:
+                        text: '^'
+                        on_release: root.repeat_count += 1
+                    Button:
+                        text: 'v'
+                        on_release: root.repeat_count -= 1
+            Widget:
+                # spacer
+                size_hint_x: 0.05
             Button:
+                size_hint_x: 0.2
                 text: 'start job'
                 disabled: (root.job_active)
                 on_release: root.start_job()
             Widget:
                 # spacer
+                size_hint_x: 0.1
             Button:
+                size_hint_x: 0.2
                 id: pause_button
                 text: 'pause'
                 disabled: (not root.job_active)
                 on_release: root.pause_job()
             Button:
+                size_hint_x: 0.2
                 text: 'stop'
                 disabled: (not root.job_active)
                 on_release: root.stop_job()

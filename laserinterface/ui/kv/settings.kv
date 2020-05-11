@@ -28,3 +28,50 @@
 
         DropDown:
             id: ports_dropdown
+
+
+
+<GrblConfig>:
+    size_hint: (0.7, 0.9)
+    title: 'Grbl Configuration'
+
+    RecycleView:
+        id: rv
+        size_hint: (1, 1)
+
+        viewclass: 'ConfigLine'
+
+        RecycleBoxLayout:
+            size_hint: 1, None
+            height: self.minimum_height
+            orientation: 'vertical'
+
+            default_size: None, None
+            default_size_hint: 1, None
+
+<ConfigLine@BoxLayout>:
+    orientation: 'horizontal'
+    size_hint: 1, None
+
+    name: ''
+    value: ''
+    desc: ''
+
+    Label:
+        size_hint: None, None
+        size: 100, 15
+        text: root.name
+
+    Label:
+        size_hint: None, None
+        size: 150, 15
+        text: root.value
+
+    Label:
+        size_hint: 1, None
+        height: self.texture_size[1]
+        padding: (10, 3)
+        text_size: self.width, None
+        on_size: root.height = self.height
+        text: root.desc
+

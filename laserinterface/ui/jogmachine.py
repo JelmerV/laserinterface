@@ -1,6 +1,5 @@
 
 # dependencies
-from threading import Thread
 import logging
 import ruamel.yaml
 
@@ -18,8 +17,7 @@ _log = logging.getLogger().getChild(__name__)
 yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
-    laser_pulse_duration = yaml.load(
-        ymlfile, )['GENERAL']['LASER_PULSE_DURATION']
+    pulse_dur = yaml.load(ymlfile, )['GENERAL']['LASER_PULSE_DURATION']
 
 
 class Jogger(ShadedBoxLayout):
@@ -95,7 +93,5 @@ class Jogger(ShadedBoxLayout):
 
     def pulse_laser(self):
         ''' turns laser on for the configured period'''
-        self.grbl.serial_send(f'M03 S1000 F{self.feedrate}')
-        self.grbl.serial_send('G1')
-        self.grbl.serial_send(f'G4 P{laser_pulse_duration}')
-        self.grbl.serial_send('G0 M5 S0')
+        self.grbl.serial_send(f'M3G1S1000F{self.feedrate}G4P{pulse_dur}')
+        self.grbl.serial_send('M5')

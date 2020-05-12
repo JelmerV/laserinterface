@@ -10,13 +10,13 @@ Controlling the GPIO works by having a relay board connected to the GPIO as an o
 
 ## Screenshots
 
-| Start/monitor/control jobs        | Jog the machine                    |
-| --------------------------------- | ---------------------------------- |
-| ![pic](docs/pics/screen_home.png) | ![pic](docs/pics/screen_files.png) |
+| Start/monitor/control jobs        | Jog the machine                    |  
+| --------------------------------- | ---------------------------------- |  
+| ![pic](docs/pics/screen_home.png) | ![pic](docs/pics/screen_files.png) |  
 
-| Select and preview a job         | control and monitor GPIO          |
-| -------------------------------- | --------------------------------- |
-| ![pic](docs/pics/screen_jog.png) | ![pic](docs/pics/screen_gpio.png) |
+| Select and preview a job          | control and monitor GPIO           |  
+| --------------------------------- | ---------------------------------- |  
+| ![pic](docs/pics/screen_jog.png)  | ![pic](docs/pics/screen_gpio.png)  |  
 
 [View more](docs/pics)
 

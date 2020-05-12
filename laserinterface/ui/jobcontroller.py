@@ -26,9 +26,7 @@ _log = logging.getLogger().getChild(__name__)
 yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
-    general_config = yaml.load(ymlfile)['GENERAL']
-    trim_dec = general_config['TRIM_DECIMALS_TO']
-    base_dir = general_config['GCODE_DIR']
+    config = yaml.load(ymlfile)
 
 
 class JobController(ShadedBoxLayout):
@@ -89,6 +87,8 @@ class JobController(ShadedBoxLayout):
             self.not_zero_popup.open()
             return
 
+        self.job_callback('START')
+
         _log.info('starting job '+self.selected_file)
         self.job_thread = Thread(target=self.send_full_file, daemon=True)
         self.job_thread.start()
@@ -101,13 +101,15 @@ class JobController(ShadedBoxLayout):
             self.grbl.serial_send(COMMANDS['cycle resume'])
             self.paused = False
             self.ids.pause_button.text = 'Pause'
+            self.job_callback('START')
         else:
             self.grbl.serial_send(COMMANDS['feed hold'])
             self.paused = True
             self.ids.pause_button.text = 'Continue'
+            self.job_callback('PAUSE')
 
     def stop_job(self):
-        # first reset to immediatly halt the machine
+        # first reset to immediately halt the machine
         self.stop_sending_job = True
         self.grbl.serial_send('M5')
 
@@ -117,6 +119,7 @@ class JobController(ShadedBoxLayout):
             self.job_progress = int(count*100.0/total_lines/self.repeat_count)
 
         def finish_job(dt):
+            self.job_callback('STOP')
             _log.info('Finished sending a file.')
             self.job_progress = 100
             app.root.job_active = False
@@ -129,11 +132,15 @@ class JobController(ShadedBoxLayout):
         start_time = time.time()
         timer = Clock.schedule_interval(update_progress, 0.1)
 
-        re_decimals = re.compile(r'(\w[+-]?\d+\.\d{'+str(trim_dec)+r'})\d+')
+        # keep only the first x numbers of a decimal
+        trim_nr = config['GENERAL']['TRIM_DECIMALS_TO']
+        re_decimals = re.compile(r'(\w[+-]?\d+\.\d{'+str(trim_nr)+r'})\d+')
+        # spaces and comments (**) and ;**
         re_comments = re.compile(r'\((.*?)\)|;(.*)')
         re_redundant = re.compile(r'\+|\s|\(.*?\)|;.*')
 
-        with open(path.join(base_dir, self.selected_file), 'r') as file:
+        _path = path.join(config['GENERAL']['GCODE_DIR'], self.selected_file)
+        with open(_path, 'r') as file:
             lines = file.readlines()
 
         total_lines = len(lines)
@@ -150,21 +157,19 @@ class JobController(ShadedBoxLayout):
                 line = line.strip().upper()
 
                 # trim decimals:
-                if trim_dec:
+                if trim_nr:
                     line = re_decimals.sub(r'\1', line)
 
-                # store comments to terminal
+                # store comments to terminal, then strip them
                 comments = re_comments.search(line)
                 if comments:
                     self.terminal.store_comment(comments.group(0))
-
-                # Strip spaces and comments (**) and ;**
                 line = re_redundant.sub('', line)
 
                 if line == '':
                     continue
 
-                # send line but wait if buffer is full, with 3 lines queued
+                # send line but wait if buffer is full, do queue three extra
                 self.grbl.serial_send(line, blocking=True, queue_count=3)
                 count += 1
 
@@ -174,6 +179,25 @@ class JobController(ShadedBoxLayout):
 
         timer.cancel()
         Clock.schedule_once(finish_job, 0)
+
+    def job_callback(self, event):
+        for event_name, actions in config['GPIO']['CALLBACKS'].items():
+            # event: TEMP_{RED/ORANGE/GREEN}
+            name, req_event = event_name.upper().split('_', 1)
+            # check if name and value match
+            if name == 'JOB' and req_event == event:
+                _log.info(f'{name} changed and triggered {actions}')
+                for output, next_val in actions.items():
+                    # actions:    OUT_{NAME}: {ON/OFF}
+                    # EQUAL/OPPOSITE are not valid
+                    out_name = output[4:]
+                    if next_val == 'ON':
+                        self.pin_write(out_name, True)
+                    elif next_val == 'OFF':
+                        self.pin_write(out_name, False)
+                    else:
+                        _log.warning(f'Configured callback state ({next_val})'
+                                     'not recognized for JOB')
 
     def override_power(self, command):
         gcode = 0

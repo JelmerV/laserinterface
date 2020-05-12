@@ -13,14 +13,13 @@ yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
     config = yaml.load(ymlfile)
-    mimic_gpio = config['GENERAL']['MIMMIC_GPIO_LIB']
-    mimic_gpio_change = config['GENERAL']['MIMMIC_GPIO_CHANGE']
+    mimic_gpio = config['GENERAL']['MIMIC_GPIO_LIB']
+    mimic_gpio_change = config['GENERAL']['MIMIC_GPIO_CHANGE']
     config = config['GPIO']
 
 if mimic_gpio:
-    _log.error(' Will be mimmicing the functions!')
+    _log.error(' Will be mimicing the functions!')
     from laserinterface._tests.mimic_gpio import GPIO_mimic  # noqa
-    import random
     GPIO = GPIO_mimic(random_inputs=mimic_gpio_change)
 else:
     from RPi import GPIO  # noqa
@@ -74,6 +73,8 @@ class GpioInterface(Thread):
         for event_name, actions in config['CALLBACKS'].items():
             event_name
             _type, name = event_name.upper().split('_', 1)
+            if _type in ('TEMP', 'JOB'):
+                continue
             name, event = name.rsplit('_', 1)
             # check if name and value match
             if (item.startswith(_type) and (name == 'ANY' or name in item) and
@@ -93,6 +94,33 @@ class GpioInterface(Thread):
                     else:
                         _log.warning(f'Configured callback state ({next_val})'
                                      'not recognized')
+
+    def on_temp_change(self, temp):
+        self.machine.update_temp(temp)
+        if temp >= config['TEMP_RANGE']['RED']:
+            state = 'RED'
+        elif temp >= config['TEMP_RANGE']['ORANGE']:
+            state = 'ORANGE'
+        else:
+            state = 'GREEN'
+
+        for event_name, actions in config['CALLBACKS'].items():
+            # event: TEMP_{RED/ORANGE/GREEN}
+            name, event = event_name.upper().split('_', 1)
+            # check if name and value match
+            if name == 'TEMP' and event == state:
+                _log.info(f'{name} changed and triggered {actions}')
+                for output, next_val in actions.items():
+                    # actions:    OUT_{NAME}: {ON/OFF}
+                    # EQUAL/OPPOSITE are not valid
+                    out_name = output[4:]
+                    if next_val == 'ON':
+                        self.pin_write(out_name, True)
+                    elif next_val == 'OFF':
+                        self.pin_write(out_name, False)
+                    else:
+                        _log.warning(f'Configured callback state ({next_val})'
+                                     'not recognized for TEMP')
 
     def close(self):
         self._quit = True
@@ -118,12 +146,12 @@ class GpioInterface(Thread):
         if mimic_gpio:
             if not mimic_gpio_change:
                 return
-            temp_c = 17
+            temp_c = 20
             up = 1
             while not self._quit:
-                if temp_c >= 25 or temp_c <= 19:
+                if temp_c >= 25 or temp_c <= 17:
                     up = -up
-                temp_c += up * random.uniform(-0.05, 0.4)
+                temp_c += up/4
                 self.machine.update_temp(temp_c)
                 time.sleep(0.2)
             return
@@ -156,6 +184,6 @@ class GpioInterface(Thread):
                 temp_string = lines[1][equals_pos+2:]
                 temp_c = float(temp_string) / 1000.0
 
-            self.machine.update_temp(temp_c)
+            self.on_temp_change(temp_c)
 
         return

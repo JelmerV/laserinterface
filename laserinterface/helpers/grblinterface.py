@@ -166,42 +166,53 @@ class GrblInterface:
 
     def _receive_continuously(self):
         # Continuously reads the serial buffer and does the required actions.
+        buffer = bytearray()
         while not self._quit:
-            out_temp = self.ser.readline().decode('ascii')
-            out_temp = out_temp.strip()
+            i = buffer.find(b"\n")
+            if i >= 0:
+                # handle a line
+                line = buffer[:i+1]
+                buffer = buffer[i+1:]
+                s = line.decode('ascii').strip()
+                if s:
+                    self._handle_received(s)
+            else:
+                # read more lines
+                waiting = max(1, min(2048, self.ser.in_waiting))
+                buffer.extend(self.ser.read(waiting))
 
-            if out_temp:
-                # if 'ok' or 'error' (finished a command from the buffer):
-                if ('ok' in out_temp) or ('error' in out_temp):
-                    self.chars_in_buffer.get()
+    def _handle_received(self, out_temp):
+        # if 'ok' or 'error' (finished a command from the buffer):
+        if ('ok' in out_temp) or ('error' in out_temp):
+            self.chars_in_buffer.get()
 
-                    if ('error' in out_temp):
-                        self.terminal.received_ok(error=True)
-                        self.terminal.store_received(out_temp, error=True)
+            if ('error' in out_temp):
+                self.terminal.received_ok(error=True)
+                self.terminal.store_received(out_temp, error=True)
+            else:
+                self.terminal.received_ok()
+
+        # if it is a report message (for machine state manager):
+        elif (out_temp[0] == '<' and out_temp[-1] == '>'):
+            self.machine.handle_grbl_report(out_temp)
+
+        elif (('ALARM' in out_temp) or ('Hold' in out_temp)
+                or ('Door' in out_temp)):
+            _log.debug(f'Message received "{out_temp}"')
+            self.terminal.store_received(out_temp, error=True)
+
+        # if it is a message without ok or error (like after $$)
+        else:
+            if self.requested_config:
+                if out_temp[0] == '$':
+                    item, value = out_temp.split('=')
+                    if '.' in value:
+                        value = float(value)
                     else:
-                        self.terminal.received_ok()
-
-                # if it is a report message (for machine state manager):
-                elif (out_temp[0] == '<' and out_temp[-1] == '>'):
-                    self.machine.handle_grbl_report(out_temp)
-
-                elif (('ALARM' in out_temp) or ('Hold' in out_temp)
-                        or ('Door' in out_temp)):
-                    _log.debug(f'Message received "{out_temp}"')
-                    self.terminal.store_received(out_temp, error=True)
-
-                # if it is a message without ok or error (like after $$)
-                else:
-                    if self.requested_config:
-                        if out_temp[0] == '$':
-                            item, value = out_temp.split('=')
-                            if '.' in value:
-                                value = float(value)
-                            else:
-                                value = int(value)
-                            self.machine.grbl_config[item] = value
-                            if item == '$132':  # last item
-                                self.requested_config = False
-                    else:
-                        _log.debug(f'Message received "{out_temp}"')
-                        self.terminal.store_received(out_temp)
+                        value = int(value)
+                    self.machine.grbl_config[item] = value
+                    if item == '$132':  # last item
+                        self.requested_config = False
+            else:
+                _log.debug(f'Message received "{out_temp}"')
+                self.terminal.store_received(out_temp)

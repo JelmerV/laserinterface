@@ -13,8 +13,12 @@ Controlling the GPIO works by having a relay board connected to the GPIO as an o
 | Start/monitor/control jobs        | Jog the machine                    |
 | --------------------------------- | ---------------------------------- |
 | ![pic](docs/pics/screen_home.png) | ![pic](docs/pics/screen_files.png) |
-| Select and preview a job          | control and monitor GPIO           |
-| ![pic](docs/pics/screen_jog.png)  | ![pic](docs/pics/screen_gpio.png)  |
+
+| Select and preview a job         | control and monitor GPIO          |
+| -------------------------------- | --------------------------------- |
+| ![pic](docs/pics/screen_jog.png) | ![pic](docs/pics/screen_gpio.png) |
+
+[View more](docs/pics)
 
 ## Installing LaserInterface
 
@@ -22,7 +26,7 @@ A fully pre-configured image for the raspberry pi is planned, but has not yet be
 
 ## Configuring LaserInterface
 
-Changing the settings can be done by modifying `data/config.yaml`. In there you can configure the GPIO pins, names, and callbacks; the different poll frequencies; and the path for the gcode directory. Read the comments in the file for better explanations.
+Changing the settings can be done by modifying `data/config.yaml`. In there you can configure the GPIO pins, names, and callbacks; the different poll frequencies; and the path for the gcode directory. Read the comments in [the file](laserinterface/data/config.yaml) for better explanations.
 
 ## Starting LaserInterface
 

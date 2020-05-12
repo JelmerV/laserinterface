@@ -18,6 +18,8 @@ Controlling the GPIO works by having a relay board connected to the GPIO as an o
 | --------------------------------- | ---------------------------------- |  
 | ![pic](docs/pics/screen_jog.png)  | ![pic](docs/pics/screen_gpio.png)  |  
 
+[View more](docs/pics)
+
 ## Installing LaserInterface
 
 A fully pre-configured image for the raspberry pi is planned, but has not yet been released. For now you will have to download the source code, run `install.sh` to setup the environment, and configure `start.sh` to be run at startup.

@@ -26,7 +26,7 @@ A fully pre-configured image for the raspberry pi is planned, but has not yet be
 
 ## Configuring LaserInterface
 
-Changing the settings can be done by modifying `data/config.yaml`. In there you can configure the GPIO pins, names, and callbacks; the different poll frequencies; and the path for the gcode directory. Read the comments in the file for better explanations.
+Changing the settings can be done by modifying `data/config.yaml`. In there you can configure the GPIO pins, names, and callbacks; the different poll frequencies; and the path for the gcode directory. Read the comments in [the file](laserinterface/data/config.yaml) for better explanations.
 
 ## Starting LaserInterface
 

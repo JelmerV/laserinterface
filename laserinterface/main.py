@@ -1,6 +1,7 @@
 
 # external dependencies
-from os.path import join, dirname
+import os
+import sys
 import logging
 import ruamel.yaml
 
@@ -36,7 +37,7 @@ else:
 
 
 class MainLayoutApp(App):
-    kv_directory = join(dirname(__file__), 'ui/kv')
+    kv_directory = os.path.join(os.path.dirname(__file__), 'ui/kv')
 
     # shared datamanagers
     terminal = ObjectProperty()
@@ -66,7 +67,6 @@ class MainLayoutApp(App):
         return MainLayout()
 
     def restart_program(self):
-        # if systemctl is set up correctly the ar should restar automaticly
         _log.warning('closing grbl connections and stopping threads')
         self.grbl.disconnect()
         _log.warning('Stopping gpio threads')
@@ -75,11 +75,29 @@ class MainLayoutApp(App):
         _log.warning('Stopping kivy application')
         self.stop()
 
+        os.execl(sys.executable, f'"{sys.executable}"', *sys.argv)
+
     def reboot_controller(self):
+        _log.warning('closing grbl connections and stopping threads')
+        self.grbl.disconnect()
+        _log.warning('Stopping gpio threads')
+        self.gpio.close()
+
+        _log.warning('Stopping kivy application')
+        self.stop()
+
         _log.warning('rebooting the controller ("sudo reboot")')
         # os.system('sudo reboot')
 
     def poweroff_controller(self):
+        _log.warning('closing grbl connections and stopping threads')
+        self.grbl.disconnect()
+        _log.warning('Stopping gpio threads')
+        self.gpio.close()
+
+        _log.warning('Stopping kivy application')
+        self.stop()
+
         _log.warning('powering off the controller ("sudo poweroff")')
         # os.system('sudo poweroff')
 

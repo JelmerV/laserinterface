@@ -10,10 +10,8 @@ Controlling the GPIO works by having a relay board connected to the GPIO as an o
 
 ## Screenshots
 
-| Start/monitor/control jobs        | Jog the machine                    |
-| ![pic](docs/pics/screen_home.png) | ![pic](docs/pics/screen_files.png) |
-| Select and preview a job          | control and monitor GPIO           |
-| ![pic](docs/pics/screen_jog.png)  | ![pic](docs/pics/screen_gpio.png)  |
+<img src="docs/pics/screen_home.png" width="45%"></img> <img src="docs/pics/screen_files.png" width="45%"></img> 
+<img src="docs/pics/screen_jog.png" width="45%"></img> <img src="docs/pics/screen_gpio.png" width="45%"></img> 
 
 ## Installing LaserInterface
 

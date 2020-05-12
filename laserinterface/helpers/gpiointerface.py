@@ -13,15 +13,15 @@ yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
     config = yaml.load(ymlfile)
-    mimmic_gpio = config['GENERAL']['MIMMIC_GPIO_LIB']
-    mimmic_gpio_change = config['GENERAL']['MIMMIC_GPIO_CHANGE']
+    mimic_gpio = config['GENERAL']['MIMMIC_GPIO_LIB']
+    mimic_gpio_change = config['GENERAL']['MIMMIC_GPIO_CHANGE']
     config = config['GPIO']
 
-if mimmic_gpio:
+if mimic_gpio:
     _log.error(' Will be mimmicing the functions!')
-    from laserinterface._tests.mimmic_gpio import GPIO_mimmic  # noqa
+    from laserinterface._tests.mimic_gpio import GPIO_mimic  # noqa
     import random
-    GPIO = GPIO_mimmic(random_inputs=mimmic_gpio_change)
+    GPIO = GPIO_mimic(random_inputs=mimic_gpio_change)
 else:
     from RPi import GPIO  # noqa
 
@@ -115,21 +115,15 @@ class GpioInterface(Thread):
             time.sleep(1/config['POLL_FREQ'])
 
     def temp_thread(self):
-        if mimmic_gpio:
-            if not mimmic_gpio_change:
+        if mimic_gpio:
+            if not mimic_gpio_change:
                 return
             temp_c = 17
-            up = True
+            up = 1
             while not self._quit:
-                if up:
-                    if temp_c >= 25:
-                        up = not up
-                    temp_c += random.uniform(-0.05, 0.4)
-                else:
-                    if temp_c <= 19:
-                        up = not up
-                    temp_c -= random.uniform(-0.05, 0.4)
-
+                if temp_c >= 25 or temp_c <= 19:
+                    up = -up
+                temp_c += up * random.uniform(-0.05, 0.4)
                 self.machine.update_temp(temp_c)
                 time.sleep(0.2)
             return

@@ -11,8 +11,8 @@ GENERAL:
 
   # useful for running/testing on desktop instead of rpi
   FULLSCREEN: false
-  MIMMIC_GPIO_LIB: true
-  MIMMIC_GPIO_CHANGE: true
+  MIMIC_GPIO_LIB: true
+  MIMIC_GPIO_CHANGE: true
 
 GRBL:
   # The port of the arduino running grbl. connects at startup
@@ -20,11 +20,11 @@ GRBL:
   PORT: COM3
 
   # poll freq influences error response time and framerate of the workspace simulator.
-  # The recommended max by grbl developpers is 5-10Hz.
+  # The recommended max by grbl developers is 5-10Hz.
   POLL_STATE_FREQ: 5
 
   # The following configurations are only configurable before uploading grbl code to the
-  # arduino. You probably dont need to change those.
+  # arduino. You probably don't need to change those.
   BAUDRATE: 115200
   RX_BUFFER_SIZE: 127
 

@@ -1,45 +1,42 @@
 # Laserinterface
 
-**The only graphical interface for GRBL lasercutters that implements the GPIO functionalities of an embedded Raspberry Pi.**
+**The only touch interface for lasercutters that implements the GPIO functionalities of an embedded Raspberry Pi.**
 
-LaserInterface was created with the goal of a **touchscreen controlled** Laser Cutter that does not requere an external PC. You simply plug a USB drive into the machine, use the touchscreen to setup the origin etc, and fire away. Now, there are already a ton of gcode senders, a lot of which also run on a raspberry pi, but none of them use the GPIO functionality to ensure the machine runs savely or to control parts of the machine.
+LaserInterface was created with the goal of a **touchscreen controlled** laser cutter that does not require an external PC. You simply plug a USB drive into the machine, use the touchscreen to set an origin, and fire away. Now, there are already a ton of gcode senders, a lot of which also run on a raspberry pi, but none of them use the GPIO to automate actions and check the safety of the machine.
 
-LaserInterface works by having a relay board connected to the GPIO buttons for controls; and a thermometer, switches, and sersors for the inputs. Of course you can control them manually, but you can **configure automated callbacks** too. Like pausing grbl when the laser tube gets too hot or if a door is opened; or bind the power of the air assist and the laser so it only makes noise during a job.
+Controlling GPIO is not the only thing LaserInterface can do. You can select jobs and see a preview of the path, size, and duration. You can jog the machine around to set working offsets and fire test-pulses. And you can control jobs, set them to repeat, and override power and speed values
 
-Using the GPIO is not the only thing LaserInterface can do. You can select a program with a preview of the path, size, and duration. You can jog the machine around to set working offsets and fire testpulses.
+Controlling the GPIO works by having a relay board connected to the GPIO as an output; and a thermometer, switches, and sensors for the inputs. Of course you can control them manually, but you can also **configure automated actions**. Like pausing grbl when the laser tube gets too hot or if a door is opened; or bind the power of the air assist and the laser so it only makes noise during a job.
 
 ## Screenshots
 
-| Start/monitor/control jobs         | Jog the machine                  |
-| ---------------------------------- | -------------------------------- |
-| ![pic](docs/pics/screen_home.png)  | ![pic](docs/pics/screen_jog.png) |
-| ---------------------------------- | -------------------------------- |
-| Select and preview a job           | control and monitor GPIO         |
-| ---------------------------------- | -------------------------------- |
-| ![pic](docs/pics/screen_files.png) | ![pic](docs/pics/screen_jog.png) |
+| Start/monitor/control jobs        | Jog the machine                    |
+| ![pic](docs/pics/screen_home.png) | ![pic](docs/pics/screen_files.png) |
+| Select and preview a job          | control and monitor GPIO           |
+| ![pic](docs/pics/screen_jog.png)  | ![pic](docs/pics/screen_gpio.png)  |
 
 ## Installing LaserInterface
 
-Use the modified kivypi image on a raspberry pi, available at the releases page. *(coming up)*
-If you use different hardware then download the source code and set this to auto start at bootup. *(need to add list of commands)*
+A fully pre-configured image for the raspberry pi is planned, but has not yet been released. For now you will have to download the source code, run `install.sh` to setup the environment, and configure `start.sh` to be run at startup.
 
 ## Configuring LaserInterface
 
-Changing the settings can be done by modifying `data/config.yaml`.
+Changing the settings can be done by modifying `data/config.yaml`. In there you can configure the GPIO pins, names, and callbacks; the different poll frequencies; and the path for the gcode directory. Read the comments in the file for better explanations.
 
 ## Starting LaserInterface
 
-For the best embedded experience, LaserInterface should start at bootup. Official releases *(The planned kivypi image)* are set up for this. During development you can run the program using the start programs or by running LaserInterface as a python module. On linux thats done using `./.venv/bash/python -m laserinterface` and on windows using `./.venv/Scripts/python.exe -m laserinterface`.
+For the best embedded experience, LaserInterface should start at bootup. Starting LaserInterface manually can be done using `start.sh` or by running LaserInterface as a python module: `python -m laserinterface`.
 
 ## Further development
 
 Short term improvements:
 
-- [ ] set up a list of command for a raspberry pi (start at boot; mount usb in gcode folder; system read only?;)
+- [ ] Set up a list of command for a raspberry pi (start at boot, mount usb in gcode folder)
 - [ ] Release a completely set up image for the raspberry pi
 - [ ] Add Settings menu to change the config.yaml file
-- [ ] Add callbacks for starting/stoping a job
+- [ ] Add callbacks for starting/stopping a job
 - [ ] Fix the virtual keyboard
+- [ ] Make gpiodisplay more dynamic to work with the config values
 
 Planned features:
 

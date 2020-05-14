@@ -60,7 +60,6 @@
         pos: self.parent.pos
 
 
-
 <GpioInputLabels>:
     orientation: 'vertical'
 
@@ -123,106 +122,40 @@
         id: LASER
         background_color: red_btn
         text: 'Enable laser power: '
-        on_release: root.gpio.pin_write('LASER', '!')
+        on_release: root.gpio.pin_write('OUT_LASER', '!')
 
     Button:
         id: MOTOR
         background_color: red_btn
         text: 'Enable stepper moters: '
-        on_release: root.gpio.pin_write('MOTOR', '!')
+        on_release: root.gpio.pin_write('OUT_MOTOR', '!')
 
     Button:
         id: GRBL
         background_color: red_btn
         text: 'Halt GRBL'
-        on_release: root.gpio.pin_write('GRBL', '!')
+        on_release: root.gpio.pin_write('OUT_GRBL', '!')
 
     Button:
         id: COOLING
         background_color: red_btn
         text: 'Enable pump for water cooling'
-        on_release: root.gpio.pin_write('COOLING', '!')
+        on_release: root.gpio.pin_write('OUT_COOLING', '!')
 
     Button:
         id: AIR
         background_color: red_btn
         text: 'Enable air assist'
-        on_release: root.gpio.pin_write('AIR', '!')
+        on_release: root.gpio.pin_write('OUT_AIR', '!')
 
     Button:
         id: EXHAUST
         background_color: red_btn
         text: 'Enable exhaust fan'
-        on_release: root.gpio.pin_write('EXHAUST', '!')
+        on_release: root.gpio.pin_write('OUT_EXHAUST', '!')
 
     Button:
         id: LIGHT
         background_color: red_btn
         text: 'Enable internal lighting'
-        on_release: root.gpio.pin_write('LIGHT', '!')
-
-
-<GpioCallbacks>:
-    orientation: 'vertical'
-
-    Label:
-        size_hint_y: None
-        height: 10
-        text: "Configured GPIO callbacks (in data/config.yaml)"
-
-    RecycleView:
-        id: rv
-        size_hint_y: 1
-
-        viewclass: 'CallbackBlock'
-
-        RecycleBoxLayout:
-            size_hint: 1, None
-            height: self.minimum_height
-            orientation: 'vertical'
-
-            default_size: None, None
-            default_size_hint: 1, None
-
-
-<CallbackBlock@BoxLayout>:
-    orientation: 'vertical'
-    size_hint: 1, None
-    padding: 20,10
-
-    event: ''
-    action: ''
-
-    Widget:
-        #spacer
-
-    Label:
-        canvas.before:
-            Color:
-                rgb: (0.2, 0.2, 0.25)
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        id: event_label
-        padding: (10, 3)
-        size_hint: 1, None
-        text_size: self.width, None
-        height: self.texture_size[1]
-        text: root.event
-
-    Label:
-        canvas.before:
-            Color:
-                rgb: (0.2, 0.25, 0.25)
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        size_hint: 1, None
-        height: self.texture_size[1]
-        padding: (50, 3)
-        text_size: self.width, None
-        on_size: root.height = self.height + 30
-        text: root.action
-
-    Widget:
-        #spacer
+        on_release: root.gpio.pin_write('OUT_LIGHT', '!')

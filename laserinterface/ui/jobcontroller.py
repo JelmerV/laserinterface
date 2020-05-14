@@ -60,6 +60,7 @@ class JobController(ShadedBoxLayout):
         self.machine = app.machine
         self.grbl = app.grbl
         self.gpio = app.gpio
+        self.callback = app.callback
         self.not_zero_popup = NotAtZeroPopup(self)
 
         self.machine.add_grbl_callback(self.update_state)
@@ -87,7 +88,7 @@ class JobController(ShadedBoxLayout):
             self.not_zero_popup.open()
             return
 
-        self.job_callback('START')
+        self.callback.do_callback('JOB_START')
 
         _log.info('starting job '+self.selected_file)
         self.job_thread = Thread(target=self.send_full_file, daemon=True)
@@ -101,12 +102,13 @@ class JobController(ShadedBoxLayout):
             self.grbl.serial_send(COMMANDS['cycle resume'])
             self.paused = False
             self.ids.pause_button.text = 'Pause'
-            self.job_callback('START')
+
+            self.callback.do_callback('JOB_START')
         else:
             self.grbl.serial_send(COMMANDS['feed hold'])
             self.paused = True
             self.ids.pause_button.text = 'Continue'
-            self.job_callback('PAUSE')
+            self.callback.do_callback('JOB_PAUSE')
 
     def stop_job(self):
         # first reset to immediately halt the machine
@@ -119,7 +121,7 @@ class JobController(ShadedBoxLayout):
             self.job_progress = int(count*100.0/total_lines/self.repeat_count)
 
         def finish_job(dt):
-            self.job_callback('STOP')
+            self.callback.do_callback('JOB_STOP')
             _log.info('Finished sending a file.')
             self.job_progress = 100
             app.root.job_active = False
@@ -180,25 +182,6 @@ class JobController(ShadedBoxLayout):
         timer.cancel()
         Clock.schedule_once(finish_job, 0)
 
-    def job_callback(self, event):
-        for event_name, actions in config['GPIO']['CALLBACKS'].items():
-            # event: TEMP_{RED/ORANGE/GREEN}
-            name, req_event = event_name.upper().split('_', 1)
-            # check if name and value match
-            if name == 'JOB' and req_event == event:
-                _log.info(f'{name} changed and triggered {actions}')
-                for output, next_val in actions.items():
-                    # actions:    OUT_{NAME}: {ON/OFF}
-                    # EQUAL/OPPOSITE are not valid
-                    out_name = output[4:]
-                    if next_val == 'ON':
-                        self.pin_write(out_name, True)
-                    elif next_val == 'OFF':
-                        self.pin_write(out_name, False)
-                    else:
-                        _log.warning(f'Configured callback state ({next_val})'
-                                     'not recognized for JOB')
-
     def override_power(self, command):
         gcode = 0
         if command == '-10':
@@ -243,6 +226,8 @@ class JobController(ShadedBoxLayout):
 
     @mainthread
     def update_state(self, status):
+        if not status.get('state'):
+            return
         if status['state'] == 'Idle' and self.job_active:
             print('gcode is not being send fast enough!!')
 

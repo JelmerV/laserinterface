@@ -22,10 +22,10 @@ with open(config_file, 'r') as ymlfile:
 
 class Jogger(ShadedBoxLayout):
     stepsize_range = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200]
-    feedrate_range = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]
+    feedrate_range = [100, 200, 500, 1000, 2000, 5000, 10000]
 
-    stepsize = NumericProperty(10)
-    feedrate = NumericProperty(5000)
+    stepsize = NumericProperty(stepsize_range[7])
+    feedrate = NumericProperty(feedrate_range[5])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

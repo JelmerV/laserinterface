@@ -31,6 +31,7 @@ class GpioInterface(Thread):
         self.daemon = True
 
         self.machine = machine  # is a datamanager object
+        self.callback = None
 
         self._quit = False
 
@@ -50,9 +51,11 @@ class GpioInterface(Thread):
             self.start()
 
     def pin_write(self, item, next_value=False):
-        if self.machine.gpio_status[f'OUT_{item}'] == next_value:
+        if self.machine.gpio_status[item] == next_value:
             # nothing changing
             return
+
+        item = item[4:]
 
         # if next_value is '!' toggle the output
         if (next_value == '!'):
@@ -66,61 +69,7 @@ class GpioInterface(Thread):
 
     def on_change(self, item, new_state):
         self.machine.update_gpio(item, new_state)
-
-        # gpio callbacks can be configured in the config.yaml These will be:
-        # events:     {OUT/IN}_{NAME/ANY}_{ON/OFF/ANY}
-        # actions:    OUT_{NAME}: {ON/OFF/EQUAL/OPPOSITE}
-        for event_name, actions in config['CALLBACKS'].items():
-            event_name
-            _type, name = event_name.upper().split('_', 1)
-            if _type in ('TEMP', 'JOB'):
-                continue
-            name, event = name.rsplit('_', 1)
-            # check if name and value match
-            if (item.startswith(_type) and (name == 'ANY' or name in item) and
-                    (event == 'ANY') or (event == 'ON' and new_state) or
-                    (event == 'OFF' and not new_state)):
-                _log.info(f'{name} changed and triggered {actions}')
-                for output, next_val in actions.items():
-                    out_name = output[4:]
-                    if next_val == 'ON':
-                        self.pin_write(out_name, True)
-                    elif next_val == 'OFF':
-                        self.pin_write(out_name, False)
-                    elif next_val == 'EQUAL':
-                        self.pin_write(out_name, new_state)
-                    elif next_val == 'OPPOSITE':
-                        self.pin_write(out_name, not new_state)
-                    else:
-                        _log.warning(f'Configured callback state ({next_val})'
-                                     'not recognized')
-
-    def on_temp_change(self, temp):
-        self.machine.update_temp(temp)
-        if temp >= config['TEMP_RANGE']['RED']:
-            state = 'RED'
-        elif temp >= config['TEMP_RANGE']['ORANGE']:
-            state = 'ORANGE'
-        else:
-            state = 'GREEN'
-
-        for event_name, actions in config['CALLBACKS'].items():
-            # event: TEMP_{RED/ORANGE/GREEN}
-            name, event = event_name.upper().split('_', 1)
-            # check if name and value match
-            if name == 'TEMP' and event == state:
-                _log.info(f'{name} changed and triggered {actions}')
-                for output, next_val in actions.items():
-                    # actions:    OUT_{NAME}: {ON/OFF}
-                    # EQUAL/OPPOSITE are not valid
-                    out_name = output[4:]
-                    if next_val == 'ON':
-                        self.pin_write(out_name, True)
-                    elif next_val == 'OFF':
-                        self.pin_write(out_name, False)
-                    else:
-                        _log.warning(f'Configured callback state ({next_val})'
-                                     'not recognized for TEMP')
+        self.callback.do_callback(f'{item}_{"ON" if new_state else "OFF"}')
 
     def close(self):
         self._quit = True
@@ -184,6 +133,15 @@ class GpioInterface(Thread):
                 temp_string = lines[1][equals_pos+2:]
                 temp_c = float(temp_string) / 1000.0
 
-            self.on_temp_change(temp_c)
+            # TEMP
+            if temp_c >= config['GPIO']['TEMP_RANGE']['RED']:
+                state = 'RED'
+            elif temp_c >= config['GPIO']['TEMP_RANGE']['ORANGE']:
+                state = 'ORANGE'
+            else:
+                state = 'GREEN'
+
+            self.machine.update_temp(temp_c)
+            self.callback.do_callback(f'TEMP_{state}')
 
         return

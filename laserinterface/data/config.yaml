@@ -12,16 +12,16 @@ GENERAL:
   # useful for running/testing on desktop instead of rpi
   FULLSCREEN: false
   MIMIC_GPIO_LIB: true
-  MIMIC_GPIO_CHANGE: true
+  MIMIC_GPIO_CHANGE: false
 
 GRBL:
   # The port of the arduino running grbl. connects at startup
   # for logging use a spy url: "spy://COM?file=path/to/file/grbl_serial.log"
-  PORT: COM3
+  PORT: spy://COM3?file=D:\code\github\laserinterface\grbl_serial.log
 
   # poll freq influences error response time and framerate of the workspace simulator.
   # The recommended max by grbl developers is 5-10Hz.
-  POLL_STATE_FREQ: 5
+  POLL_STATE_FREQ: 10
 
   # The following configurations are only configurable before uploading grbl code to the
   # arduino. You probably don't need to change those.
@@ -70,40 +70,41 @@ GPIO:
       TEXT_LOW: Open
       TEXT_HIGH: Closed
 
-  # Callbacks are the event that happen when a specific gpio value changes.
-  # The name defines when it gets called. Use one of the the following:
-  #   {OUT/IN}_{NAME/ANY}_{ON/OFF/ANY}
-  #   TEMP_{RED/ORANGE/GREEN}
-  #   JOB_{START/STOP/PAUSE}
-  #
-  # The outputs that should be toggled are specified with:
-  #     OUT_{NAME}: {ON/OFF/EQUAL/OPPOSITE}
-  #
-  # if output/input with that name changes to the specified value, all of the
-  # following items will be set to the new value.
-  CALLBACKS:
-    # The following example ensures the cooling and the exhaust are turned on
-    # when the laser is turned on.
-    OUT_LASER_ON:
-      OUT_COOLING: ON
-      OUT_EXHAUST: ON
-    # the next example switches the air assist to be on when the laser is on,
-    # and off, when the laser turns off
-    OUT_LASER_ANY:
-      OUT_AIR: EQUAL
+# Callbacks are the event that happen when a specific gpio value changes.
+# The name defines when it gets called. Use one of the the following:
+#   {OUT/IN}_{NAME/ANY}_{ON/OFF/ANY}
+#   TEMP_{RED/ORANGE/GREEN}
+#   JOB_{START/STOP/PAUSE}
+#
+# The outputs that should be toggled are specified with:
+#     OUT_{NAME}: {ON/OFF/EQUAL/OPPOSITE}
+#     SEND_GRBL: {HOLD/CONTINUE}
+#
+# if output/input with that name changes to the specified value, all of the
+# following items will be set to the new value.
+CALLBACKS:
+  # The following example ensures the cooling and the exhaust are turned on
+  # when the laser is turned on.
+  OUT_LASER_ON:
+    OUT_COOLING: ON
+    OUT_EXHAUST: ON
+  # the next example switches the air assist to be on when the laser is on,
+  # and off, when the laser turns off
+  OUT_LASER_ANY:
+    OUT_AIR: EQUAL
 
-    # halt grbl when an input switched off (door opened, no water flowing, etc.)
-    IN_ANY_OFF:
-      OUT_GRBL: OFF
+  # halt grbl when an input switched off (door opened, no water flowing, etc.)
+  IN_ANY_OFF:
+    OUT_GRBL: OFF
 
-    IN_FRONT_COVER_OFF:
-      OUT_LASER: OFF
-      OUT_MOTOR: OFF
+  IN_FRONT_COVER_OFF:
+    OUT_LASER: OFF
+    OUT_MOTOR: OFF
 
-    IN_TOP_COVER_OFF:
-      OUT_LASER: OFF
-      OUT_MOTOR: OFF
+  IN_TOP_COVER_OFF:
+    OUT_LASER: OFF
+    OUT_MOTOR: OFF
 
-    TEMP_RED:
-      OUT_GRBL: OFF
-      OUT_LASER: OFF
+  TEMP_RED:
+    OUT_GRBL: OFF
+    OUT_LASER: OFF

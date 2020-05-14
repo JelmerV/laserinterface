@@ -4,7 +4,7 @@ import ruamel.yaml
 
 # kivy imports
 from kivy.app import App
-from kivy.clock import Clock, mainthread
+from kivy.clock import mainthread
 from kivy.properties import BooleanProperty, NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 
@@ -15,7 +15,7 @@ from laserinterface.ui.themedwidgets import ShadedBoxLayout
 yaml = ruamel.yaml.YAML()
 config_file = 'laserinterface/data/config.yaml'
 with open(config_file, 'r') as ymlfile:
-    gpio_config = yaml.load(ymlfile)['GPIO']
+    config = yaml.load(ymlfile)
 
 # Colors in RGBA
 STATE = {
@@ -34,7 +34,7 @@ class GpioInputIcons(BoxLayout):
     top_cover_state = BooleanProperty(False)
     estop_state = BooleanProperty(False)
 
-    config = gpio_config
+    config = config['GPIO']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -73,7 +73,7 @@ class GpioInputLabels(ShadedBoxLayout):
     top_cover_state = BooleanProperty(False)
     estop_state = BooleanProperty(False)
 
-    config = gpio_config
+    config = config['GPIO']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -105,7 +105,7 @@ class GpioInputLabels(ShadedBoxLayout):
 
 
 class GpioOutputController(ShadedBoxLayout):
-    config = gpio_config
+    config = config['GPIO']
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -128,46 +128,3 @@ class GpioOutputController(ShadedBoxLayout):
                     button.background_color = STATE['GREEN_BTN']
                 else:
                     button.background_color = STATE['RED_BTN']
-
-
-class GpioCallbacks(ShadedBoxLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        Clock.schedule_once(lambda dt: self.setup(), 0)
-
-    def setup(self):
-        data = []
-        for event, actions in gpio_config['CALLBACKS'].items():
-            name, new_value = event.rsplit('_', 1)
-            event = f"When '{name}' switches to '{new_value}' do:"
-
-            acts = []
-            for output, next_val in actions.items():
-                acts.append(f"Switch '{output}' to be '{next_val}'")
-            actions = '\n'.join(acts)
-
-            data.append({
-                'event': event,
-                'action': actions,
-            })
-
-        self.ids.rv.data = data
-
-
-if __name__ == '__main__':
-    from kivy.app import App  # noqa
-    from kivy.lang import Builder  # noqa
-    from os.path import join, dirname  # noqa
-    from kivy import resources  # noqa
-
-    data_dir = join(dirname(__file__), '..', 'data')
-    resources.resource_add_path(data_dir)
-
-    filename = join(dirname(__file__), 'kv', 'gpiodisplay.kv')
-    kv_file = Builder.load_file(filename)
-
-    class TestApp(App):
-        def build(self):
-            return GpioCallbacks()
-
-    TestApp().run()

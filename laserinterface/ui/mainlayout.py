@@ -12,9 +12,11 @@ from kivy.properties import NumericProperty
 from kivy.uix.floatlayout import FloatLayout
 
 
+from laserinterface.ui.callbackdisplay import CallbackDisplay
 from laserinterface.ui.fileselector import FileSelector, PlottedGcode
-from laserinterface.ui.gpiodisplay import GpioInputIcons, GpioInputLabels
-from laserinterface.ui.gpiodisplay import GpioOutputController, GpioCallbacks
+from laserinterface.ui.gpiodisplay import GpioInputIcons
+from laserinterface.ui.gpiodisplay import GpioInputLabels
+from laserinterface.ui.gpiodisplay import GpioOutputController
 from laserinterface.ui.jobcontroller import JobController
 from laserinterface.ui.jogmachine import Jogger
 from laserinterface.ui.machineview import MachineView

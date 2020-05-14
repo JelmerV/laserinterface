@@ -18,6 +18,7 @@ from laserinterface.datamanager.terminal import TerminalManager
 from laserinterface.helpers.gpiointerface import GpioInterface
 from laserinterface.helpers.grblinterface import GrblInterface
 from laserinterface.helpers.gcodereader import GcodeReader
+from laserinterface.helpers.callbackhandler import CallbackHandler
 
 # import all modules for the ui
 from laserinterface.ui.mainlayout import MainLayout
@@ -60,8 +61,13 @@ class MainLayoutApp(App):
         self.gpio = GpioInterface(machine=self.machine)
         self.gcode = GcodeReader()
 
-        Clock.schedule_once(lambda dt: self.gpio.pin_write('LIGHT', True), 2)
-        Clock.schedule_once(lambda dt: self.gpio.pin_write('COOLING', True), 2)
+        self.callback = CallbackHandler(grbl=self.grbl, gpio=self.gpio)
+        self.gpio.callback = self.callback
+
+        Clock.schedule_once(
+            lambda dt: self.gpio.pin_write('OUT_LIGHT', True), 2)
+        Clock.schedule_once(
+            lambda dt: self.gpio.pin_write('OUT_COOLING', True), 2)
 
     def build(self):
         return MainLayout()

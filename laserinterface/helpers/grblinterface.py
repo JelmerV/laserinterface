@@ -37,7 +37,7 @@ class GrblInterface:
         self.lines_to_sent = queue.Queue()
         self.lines_count = 0
         self.connected = False
-        self.report = '<>'
+        self.sending = False
         self.requested_config = False
 
     def set_port(self, port):
@@ -99,9 +99,15 @@ class GrblInterface:
         self.requested_config = True
         self.serial_send('$$')
         start_time = time.time()
-        while self.requested_config and time.time()-start_time < timeout:
-            time.sleep(0.2)
+        while self.requested_config:
+            if time.time()-start_time > timeout:
+                return False
+            time.sleep(0.1)
+        with open('laserinterface/data/grbl_config.txt', 'w') as file:
+            for key, value in self.machine.grbl_config.items():
+                file.write(f'{key}={value}\n')
         print('received full config: ', self.machine.grbl_config)
+        return True
 
     def soft_reset(self):
         while not self.lines_to_sent.empty():
@@ -120,14 +126,21 @@ class GrblInterface:
         if not self.connected:
             return False
 
-        # 'extended ascii' commands
-        if type(line) == int:
-            byte = struct.pack('>B', line)
-            self.ser.write(byte)
-            return True
         # real-time commands do not wait in buffer, so they are send directly
-        elif line in ('!', '?', '~'):
-            self.ser.write(line.encode('ascii'))
+        if (type(line) == int) or (line in ('!', '?', '~')):
+            if (type(line) == int):
+                # 'extended ascii' commands
+                byte = struct.pack('>B', line)
+            else:
+                byte = line.encode('ascii')
+
+            while self.sending:
+                time.sleep(0.001)
+            self.sending = True
+            self.ser.write(byte)
+            self.sending = False
+            return True
+
         # if line is gcode etc. add it to the send queue
         else:
             self.terminal.store_send(line)
@@ -145,12 +158,16 @@ class GrblInterface:
 
             while (sum(self.chars_in_buffer.queue)+len(line)+1 >=
                     (config['RX_BUFFER_SIZE']-1)):
-                # other thread is handling the incomming messages
+                # other thread is handling the incoming messages
                 # all we have to do, is wait for the buffer to be handled
                 time.sleep(0.001)
 
+            while self.sending:
+                time.sleep(0.001)
+            self.sending = True
             # Send g-code block to grbl
             self.ser.write((line + '\n').encode('ascii'))
+            self.sending = False
 
             # Track number of characters in grbl serial read buffer
             self.chars_in_buffer.put(len(line)+1)
@@ -159,7 +176,7 @@ class GrblInterface:
             self.terminal.send_to_buffer()
 
     def _request_state(self):
-        ''' Periodicly send '?' to request a new state. '''
+        ''' Periodically send '?' to request a new state. '''
         while not self._quit:
             self.serial_send('?')
             time.sleep(1/config['POLL_STATE_FREQ'])

@@ -23,6 +23,7 @@ class MachineStateManager():
         '''
         if callable(callback):
             self.grbl_callbacks.append(callback)
+            callback(self.grbl_status)
         return callable(callback)
 
     def handle_grbl_report(self, state_in):
@@ -56,12 +57,13 @@ class MachineStateManager():
 
     def add_temp_callback(self, callback):
         '''
-        Callbacks added here will be called whenever the tempereture of the
+        Callbacks added here will be called whenever the temperature of the
         cooling water is changed. The new temperature will be given as an
-        argument in the callback funtion.
+        argument in the callback function.
         '''
         if callable(callback):
             self.temp_callbacks.append(callback)
+            callback(self.cooling_temp)
         return callable(callback)
 
     def update_temp(self, temp):
@@ -74,13 +76,13 @@ class MachineStateManager():
         '''
         Callbacks added here will be called whenever the gpio state is changed.
         the changed item and its new value will be added as an argument to the
-        callback funtion.
+        callback function.
         '''
         if callable(callback):
-            _log.info('new gpio callback is being registered; '+str(callback))
             self.gpio_callbacks.append(callback)
-        else:
-            _log.warning(f'new gpio callback "{callback}" is not callable!')
+            for item, state in self.gpio_status.items():
+                callback(item, state)
+
         return callable(callback)
 
     def update_gpio(self, item, new_state):

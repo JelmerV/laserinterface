@@ -31,32 +31,35 @@ class MachineView(RelativeLayout):
 
     def draw_workspace(self, spacing=100):
         try:
-            width = float(self.machine.grbl_config['$130'])
+            self.grid_width = float(self.machine.grbl_config['$130'])
             height = float(self.machine.grbl_config['$131'])
         except (AttributeError, KeyError):
-            width = 500.0
+            self.grid_width = 500.0
             height = 300.0
-        scale = min(self.width/width, self.height/height)
+        scale = min(self.width/self.grid_width, self.height/height)
         self.scale = scale
 
         # find nearest power for a suitable spacing
-        spacing = min([5, 10, 20, 50, 100, 200], key=lambda x: abs(x-width/10))
+        spacing = min([1, 2, 5, 10, 20, 50, 100, 200],
+                      key=lambda x: abs(x-self.grid_width/10))
         self.grid_size = spacing
 
         self.canvas.remove_group('workspace')
         with self.canvas:
             Color(0.60, 0.60, 0.60)
-            for i in range(int(width/spacing)):
+            for i in range(int(self.grid_width/spacing)):
                 Line(width=0.5, group='workspace',
                      points=(i*spacing*scale, 0,
                              i*spacing*scale, height*scale))
             for i in range(int(height/spacing)):
-                Line(width=0.5, group='workspace',
-                     points=(0, self.height-i*spacing*scale,
-                             width*scale, self.height-i*spacing*scale))
+                Line(width=0.5, group='workspace', points=(
+                    0, self.height-i*spacing*scale,
+                    self.grid_width*scale, self.height-i*spacing*scale))
 
     @mainthread
     def update_state(self, status):
+        if not status.get('state'):
+            return
         self.full_report = status
         self.state = status['state']
         self.wpos = f"({status['WPos'][0]:.2f}, {status['WPos'][1]:.2f})"
@@ -64,10 +67,12 @@ class MachineView(RelativeLayout):
         self.wco = f"({status['WCO'][0]:.2f}, {status['WCO'][1]:.2f})"
 
         # move the marker. homing position is the top
-        self.ids.wpos_mark.center_x = status['MPos'][0]*self.scale
+        self.ids.wpos_mark.center_x = (
+            (status['MPos'][0]+self.grid_width)*self.scale)
         self.ids.wpos_mark.center_y = status['MPos'][1]*self.scale+self.height
 
-        self.ids.wco_mark.center_x = status['WCO'][0]*self.scale
+        self.ids.wco_mark.center_x = (
+            (status['WCO'][0]+self.grid_width)*self.scale)
         self.ids.wco_mark.center_y = status['WCO'][1]*self.scale+self.height
 
         if old_wco != self.wco:
@@ -85,14 +90,18 @@ class MachineView(RelativeLayout):
         wco_x = self.full_report['WCO'][0]
         wco_y = self.full_report['WCO'][1]
 
+        # coordinate offsets
+        ox = self.grid_width
+        oy = self.height/self.scale
+
         self.canvas.remove_group('gcode')
         with self.canvas:
             # draw max, min lines and place labels
             Color(0.20, 0.80, 0.90)
             Line(width=0.9, group='gcode', points=(
-                (wco_x+min_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
-                (wco_x+max_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
-                (wco_x+max_x)*self.scale, (wco_y+max_y)*self.scale+self.height,
-                (wco_x+min_x)*self.scale, (wco_y+max_y)*self.scale+self.height,
-                (wco_x+min_x)*self.scale, (wco_y+min_y)*self.scale+self.height,
+                (wco_x+min_x+ox)*self.scale, (wco_y+min_y+oy)*self.scale,
+                (wco_x+max_x+ox)*self.scale, (wco_y+min_y+oy)*self.scale,
+                (wco_x+max_x+ox)*self.scale, (wco_y+max_y+oy)*self.scale,
+                (wco_x+min_x+ox)*self.scale, (wco_y+max_y+oy)*self.scale,
+                (wco_x+min_x+ox)*self.scale, (wco_y+min_y+oy)*self.scale,
             ))

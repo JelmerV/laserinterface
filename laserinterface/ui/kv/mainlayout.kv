@@ -3,6 +3,7 @@
 #:import Factory kivy.factory.Factory
 #:import NoTransition kivy.uix.screenmanager.NoTransition
 
+#:include laserinterface/ui/kv/callbackdisplay.kv
 #:include laserinterface/ui/kv/fileselector.kv
 #:include laserinterface/ui/kv/gpiodisplay.kv
 #:include laserinterface/ui/kv/jobcontroller.kv
@@ -181,7 +182,7 @@
                 id: inputs
                 size_hint_y: 0.5
 
-            GpioCallbacks:
+            CallbackDisplay:
                 id: callbacks
                 size_hint_y: 0.4
 

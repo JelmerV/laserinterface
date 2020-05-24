@@ -8,7 +8,7 @@ import ruamel.yaml
 from kivy.app import App
 from kivy import resources
 from kivy.clock import Clock
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, StringProperty
 from kivy.uix.floatlayout import FloatLayout
 
 
@@ -38,6 +38,7 @@ with open(config_file, 'r') as ymlfile:
 # main layout with topbar and screenmanager
 class MainLayout(FloatLayout):
     grbl_buffer = NumericProperty(0)
+    grbl_state = StringProperty('???')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -58,6 +59,7 @@ class MainLayout(FloatLayout):
         if not self.grbl.connect():
             Clock.schedule_once(self.connectgrbl.open, 0)
 
+        self.machine.add_grbl_callback(self.update_state)
         Clock.schedule_interval(self.update_properties, 0.05)
 
     def open_grblconnect(self):
@@ -68,3 +70,7 @@ class MainLayout(FloatLayout):
 
     def update_properties(self, dt):
         self.grbl_buffer = sum(self.grbl.chars_in_buffer.queue)
+
+    def update_state(self, report):
+        self.grbl_state = report.get('state', '??')
+        self.ids.resume_btn.visible = (self.grbl_state == 'Hold:0')

@@ -70,6 +70,23 @@
                 size_hint_x: 0.2
                 orientation: 'vertical'
                 Label:
+                    size_hint_y: 0.6
+                    text: 'Grbl state:\n'+str(root.grbl_state)
+                Button:
+                    id: resume_btn
+                    visible: False
+                    size_hint_y: 0.4 if self.visible else 0.000001
+                    opacity: 1 if self.visible else 0
+                    text: 'resume'
+                    on_release: app.grbl.serial_send('~')
+
+            Widget:
+                size_hint_x: 0.2
+
+            BoxLayout:
+                size_hint_x: 0.2
+                orientation: 'vertical'
+                Label:
                     size_hint_y: 0.7
                     text: 'Grbl rx buffer:\n'+str(root.grbl_buffer)+' of 127'
                 ProgressBar:
@@ -165,6 +182,7 @@
 
 
 <JobScreen@Screen>:
+    on_pre_leave: file_selector.clear_mem()
     FileSelector:
         id: file_selector
 

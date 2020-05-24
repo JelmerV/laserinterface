@@ -1,6 +1,6 @@
 GENERAL:
   # duration of a test pulse in seconds (wait is done by a G4 command)
-  LASER_PULSE_DURATION: 0.1
+  LASER_PULSE_DURATION: 0.2
 
   # option to trim decimals before sending gcode to reduce the chars in grbl buffer
   # set False to disable
@@ -11,13 +11,13 @@ GENERAL:
 
   # useful for running/testing on desktop instead of rpi
   FULLSCREEN: false
-  MIMIC_GPIO_LIB: true
+  MIMIC_GPIO_LIB: false
   MIMIC_GPIO_CHANGE: false
 
 GRBL:
   # The port of the arduino running grbl. connects at startup
   # for logging use a spy url: "spy://COM?file=path/to/file/grbl_serial.log"
-  PORT: spy://COM3?file=D:\code\github\laserinterface\grbl_serial.log
+  PORT: COM3
 
   # poll freq influences error response time and framerate of the workspace simulator.
   # The recommended max by grbl developers is 5-10Hz.
@@ -83,11 +83,12 @@ GPIO:
 # if output/input with that name changes to the specified value, all of the
 # following items will be set to the new value.
 CALLBACKS:
-  # The following example ensures the cooling and the exhaust are turned on
+  # The following rule ensures the cooling and the exhaust are always on
   # when the laser is turned on.
   OUT_LASER_ON:
     OUT_COOLING: ON
     OUT_EXHAUST: ON
+
   # the next example switches the air assist to be on when the laser is on,
   # and off, when the laser turns off
   OUT_LASER_ANY:
@@ -95,16 +96,8 @@ CALLBACKS:
 
   # halt grbl when an input switched off (door opened, no water flowing, etc.)
   IN_ANY_OFF:
-    OUT_GRBL: OFF
-
-  IN_FRONT_COVER_OFF:
-    OUT_LASER: OFF
-    OUT_MOTOR: OFF
-
-  IN_TOP_COVER_OFF:
-    OUT_LASER: OFF
-    OUT_MOTOR: OFF
+    SEND_GRBL: HOLD
 
   TEMP_RED:
-    OUT_GRBL: OFF
+    SEND_GRBL: HOLD
     OUT_LASER: OFF

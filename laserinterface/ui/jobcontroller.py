@@ -118,7 +118,7 @@ class JobController(ShadedBoxLayout):
     def send_full_file(self):
         def update_progress(dt):
             self.job_duration = int(time.time() - start_time)
-            self.job_progress = int(count*100.0/total_lines/self.repeat_count)
+            self.job_progress = int(size_done*100/size_total/self.repeat_count)
 
         def finish_job(dt):
             self.callback.do_callback('JOB_STOP')
@@ -127,12 +127,13 @@ class JobController(ShadedBoxLayout):
             app.root.job_active = False
             self.job_active = False
 
-        total_lines = 1
-        count = 0
+        size_total = 1
+        size_done = 1
+        repeats = 0
 
         app = App.get_running_app()
         start_time = time.time()
-        timer = Clock.schedule_interval(update_progress, 0.1)
+        timer = Clock.schedule_interval(update_progress, 0.3)
 
         # keep only the first x numbers of a decimal
         trim_nr = config['GENERAL']['TRIM_DECIMALS_TO']
@@ -142,38 +143,37 @@ class JobController(ShadedBoxLayout):
         re_redundant = re.compile(r'\+|\s|\(.*?\)|;.*')
 
         _path = path.join(config['GENERAL']['GCODE_DIR'], self.selected_file)
-        with open(_path, 'r') as file:
-            lines = file.readlines()
 
-        total_lines = len(lines)
-        repeats = 0
         while repeats < self.repeat_count:
             repeats += 1
-            for line in lines:
-                if self.stop_sending_job:
-                    timer.cancel()
-                    Clock.schedule_once(finish_job, 0)
-                    self.stop_sending_job = False
-                    return
+            size_total = path.getsize(_path)
+            size_done = 0
+            with open(_path, 'r') as file:
+                for line in file:
+                    if self.stop_sending_job:
+                        timer.cancel()
+                        Clock.schedule_once(finish_job, 0)
+                        self.stop_sending_job = False
+                        return
 
-                line = line.strip().upper()
+                    size_done += len(line)
+                    line = line.strip().upper()
 
-                # trim decimals:
-                if trim_nr:
-                    line = re_decimals.sub(r'\1', line)
+                    # trim decimals:
+                    if trim_nr:
+                        line = re_decimals.sub(r'\1', line)
 
-                # store comments to terminal, then strip them
-                comments = re_comments.search(line)
-                if comments:
-                    self.terminal.store_comment(comments.group(0))
-                line = re_redundant.sub('', line)
+                    # store comments to terminal, then strip them
+                    comments = re_comments.search(line)
+                    if comments:
+                        self.terminal.store_comment(comments.group(0))
+                    line = re_redundant.sub('', line)
 
-                if line == '':
-                    continue
+                    if line == '':
+                        continue
 
-                # send line but wait if buffer is full, do queue three extra
-                self.grbl.serial_send(line, blocking=True, queue_count=3)
-                count += 1
+                    # send line but wait if buffer is full. does queue three
+                    self.grbl.serial_send(line, blocking=True, queue_count=3)
 
         # wait until all lines are received
         while len(self.terminal.line_wait_for_ok) > 0:

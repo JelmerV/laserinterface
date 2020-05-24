@@ -25,11 +25,11 @@ class CallbackDisplay(ShadedBoxLayout):
         data = []
         for event, actions in config['CALLBACKS'].items():
             name, new_value = event.rsplit('_', 1)
-            event = f"When '{name}' switches to '{new_value}' do:"
+            event = f"When '{name}' goes to '{new_value}' do:"
 
             acts = []
             for output, next_val in actions.items():
-                acts.append(f"Switch '{output}' to be '{next_val}'")
+                acts.append(f"Set '{output}' to '{next_val}'")
             actions = '\n'.join(acts)
 
             data.append({

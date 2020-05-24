@@ -97,12 +97,25 @@ class GpioInterface(Thread):
                 return
             temp_c = 20
             up = 1
+            last_state = ''
             while not self._quit:
                 if temp_c >= 25 or temp_c <= 17:
                     up = -up
                 temp_c += up/4
                 self.machine.update_temp(temp_c)
                 time.sleep(0.2)
+                # TEMP
+                if temp_c >= config['TEMP_RANGE']['RED']:
+                    state = 'RED'
+                elif temp_c >= config['TEMP_RANGE']['ORANGE']:
+                    state = 'ORANGE'
+                else:
+                    state = 'GREEN'
+
+                self.machine.update_temp(temp_c)
+                if state != last_state:
+                    self.callback.do_callback(f'TEMP_{state}')
+                    last_state = state
             return
 
         # find file url for the ds18b20 readings
@@ -117,6 +130,7 @@ class GpioInterface(Thread):
             except IndexError:
                 thermometer_url = None
 
+        last_state = ''
         while not self._quit:
             temp_c = 99
 
@@ -134,14 +148,16 @@ class GpioInterface(Thread):
                 temp_c = float(temp_string) / 1000.0
 
             # TEMP
-            if temp_c >= config['GPIO']['TEMP_RANGE']['RED']:
+            if temp_c >= config['TEMP_RANGE']['RED']:
                 state = 'RED'
-            elif temp_c >= config['GPIO']['TEMP_RANGE']['ORANGE']:
+            elif temp_c >= config['TEMP_RANGE']['ORANGE']:
                 state = 'ORANGE'
             else:
                 state = 'GREEN'
 
             self.machine.update_temp(temp_c)
-            self.callback.do_callback(f'TEMP_{state}')
+            if state != last_state:
+                self.callback.do_callback(f'TEMP_{state}')
+                last_state = state
 
         return

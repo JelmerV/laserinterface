@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import logging
 import math
 import re
+import sys
 
 _log = logging.getLogger().getChild(__name__)
 
@@ -67,49 +68,40 @@ class GcodeReader:
     def handle_file(self, filename) -> list:
         ''' Read all lines in a file and call the handling function
         returns list of paths'''
-        if not filename:
-            return
+
         _log.info(f'gcode reader starting to handle {filename}')
         try:
+            self.reset()
             with open(filename) as f:
-                gcode_lines = f.readlines()
+                for line_number, fullString in enumerate(f):
+                    # strip comments
+                    fullString = re.sub(r'\(.*?\)|;.*', '', fullString)
+                    fullString = fullString.upper().strip()
+
+                    # skip lines without commands
+                    if fullString == '':
+                        continue
+
+                    # split lines containing multiple commands
+                    listOfLines = fullString.split('G')
+                    if len(listOfLines) > 1:  # if multiple commands found
+                        for line in listOfLines:
+                            if len(line) > 0:  # If the line is not blank
+                                self._handle_command('G'+line, line_number)
+                                line_number += 1
+                    else:
+                        self._handle_command(fullString, line_number)
+                        line_number += 1
+
+            for callback in self.new_job_callbacks:
+                callback()
+            print(f'Complete list of paths takes up for {filename}'
+                  f' {sys.getsizeof(self.complete_paths)} bytes')
+            return self.complete_paths
+
         except UnicodeDecodeError:
             _log.info(f'{filename} can not be decoded as text')
             return
-
-        self.reset()
-        return self.handle_gcode_list(gcode_lines)
-
-    def handle_gcode_list(self, gcode_lines) -> list:
-        ''' sends all commands one by one to the handle_command function
-        returns list of paths'''
-        line_number = 0
-        for fullString in gcode_lines:
-            # strip comments
-            fullString = re.sub(r'\(.*?\)|;.*', '', fullString)
-            fullString = fullString.upper().strip()
-
-            # skip lines without commands
-            if fullString == '':
-                continue
-
-            # split lines containing multiple commands
-            listOfLines = fullString.split('G')
-            if len(listOfLines) > 1:  # if multiple commands found
-                for line in listOfLines:
-                    if len(line) > 0:  # If the line is not blank
-                        self._handle_command('G'+line, line_number)
-                        line_number += 1
-            else:
-                self._handle_command(fullString, line_number)
-                line_number += 1
-
-        _log.info(('Calculated all paths for the given gcode.'
-                   f' {len(gcode_lines)} lines'))
-
-        for callback in self.new_job_callbacks:
-            callback()
-        return self.complete_paths
 
     def _handle_command(self, command, line_number=0):
         ''' Check the command and call the path handling functions, or set the
@@ -295,7 +287,7 @@ class GcodeReader:
         while abs(curLen) < arcLen:
             xPosOnLine = centerX + radius*math.cos(angle1 + curLen)
             yPosOnLine = centerY + radius*math.sin(angle1 + curLen)
-            curLen += (arcLen/30.0) * direction
+            curLen += direction * arcLen/25
 
             self.max_x = max(self.max_x, xTarget)
             self.max_y = max(self.max_y, yTarget)

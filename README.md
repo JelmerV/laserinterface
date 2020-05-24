@@ -36,6 +36,7 @@ For the best embedded experience, LaserInterface should start at bootup. Startin
 
 Short term improvements:
 
+- [ ] Replace threading for multiproccesing to add multi core support. Currently the interface can get unrespronsive while sending a job with very small segments (this requires very fast sending). Multiproccesing should solve that.
 - [ ] Set up a list of command for a raspberry pi (start at boot, mount usb in gcode folder)
 - [ ] Release a completely set up image for the raspberry pi
 - [ ] Add Settings menu to change the config.yaml file

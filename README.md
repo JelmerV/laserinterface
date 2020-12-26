@@ -53,3 +53,6 @@ Planned features:
 ### Reusing part of the software
 
 The code is split up over modules that share datamanagers to pass data. It should be fairly easy to reuse only a single submodule in your code but most ui elements do depend on the helpers and datamanagers modules. So if you are getting errors while running individual modules, this should be the first place to look.
+
+## Lasercutter Control Panel
+This project is kind of abandoned. I am now using [Laser controlpanel](https://github.com/JelmerV/lasercutter_controlpanel) in combination with [Lightburn](https://lightburnsoftware.com/). there is simply no way i could integrate that many usefull features on a touchscreen. Laser controlpanel also offers automatic safety actions, eventhough grbl is controlled from a seperate device.
